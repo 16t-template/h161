@@ -91,8 +91,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
         });
 
-        const data = await res.json();
-        if (res.ok && data.success && data.user) {
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          // Empty or non-JSON response from server
+        }
+
+        if (res.ok && data?.success && data?.user) {
           const matchedUser = data.user;
           const verifiedUser: AuthUser = {
             id: matchedUser.id,
@@ -223,9 +229,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
         });
 
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          const errMsg = data.error || 'Tên tài khoản hoặc mật khẩu không chính xác!';
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          // Response body is empty or non-JSON (e.g., 404/405 from static-only hosts)
+        }
+
+        if (!res.ok || !data?.success) {
+          let errMsg = data?.error;
+          if (!errMsg) {
+            if (res.status === 404 || res.status === 405) {
+              errMsg = 'Không tìm thấy API backend (/api/sheets/login). Host hiện tại chưa chạy backend Node.js!';
+            } else {
+              errMsg = 'Tên tài khoản hoặc mật khẩu không chính xác!';
+            }
+          }
           setAuthError(errMsg);
           return {
             success: false,
