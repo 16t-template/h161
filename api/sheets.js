@@ -791,7 +791,7 @@ export default async function handler(req, res) {
 
     return res.status(404).json({ error: 'Endpoint not found: ' + action });
   } catch (err) {
-    console.error('Vercel API error:', err);
+    console.error('Sheets API error:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 }
