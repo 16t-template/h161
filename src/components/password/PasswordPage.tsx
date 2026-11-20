@@ -264,18 +264,31 @@ export const PasswordPage: React.FC<PasswordPageProps> = ({ onBack }) => {
     }
   };
 
-  // Sync state & Smart Realtime Auto-Sync Hook (25s interval, focus refresh, instant badge)
+  // Sync state & Smart Realtime Auto-Sync Hook (30s interval, focus refresh, instant badge)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { isSyncing, lastSyncTime, triggerManualSync } = useAutoSync<PasswordItem[]>({
     syncFn: () => passwordService.fetchFromSheet(),
     onDataReceived: (live) => {
-      if (Array.isArray(live)) {
+      if (Array.isArray(live) && live.length > 0) {
         setPasswords(live);
       }
     },
-    intervalMs: 25000,
+    intervalMs: 30000,
   });
+
+  // Tải dữ liệu ban đầu ngay khi vào trang nếu chưa có hoặc cập nhật từ server
+  useEffect(() => {
+    let isMounted = true;
+    passwordService.fetchFromSheet().then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setPasswords(data);
+      }
+    }).catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Modals & Drawers
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -1223,7 +1236,17 @@ export const PasswordPage: React.FC<PasswordPageProps> = ({ onBack }) => {
                     </thead>
 
                     <tbody className="divide-y divide-border/60">
-                      {paginatedPasswords.length === 0 ? (
+                      {isSyncing && passwords.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={tableColumns.filter((c) => c.visible).length + 2}
+                            className="py-16 text-center text-xs text-muted-foreground"
+                          >
+                            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                            Đang tải danh sách tài khoản & mật khẩu...
+                          </td>
+                        </tr>
+                      ) : paginatedPasswords.length === 0 ? (
                         <tr>
                           <td
                             colSpan={tableColumns.filter((c) => c.visible).length + 2}
@@ -1318,7 +1341,18 @@ export const PasswordPage: React.FC<PasswordPageProps> = ({ onBack }) => {
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {isSyncing && passwords.length === 0 ? (
+                    <div className="py-16 text-center text-xs text-muted-foreground">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                      Đang tải danh sách tài khoản & mật khẩu...
+                    </div>
+                  ) : paginatedPasswords.length === 0 ? (
+                    <div className="py-16 text-center text-xs text-muted-foreground">
+                      <KeyRound className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      Không tìm thấy tài khoản nào phù hợp.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {paginatedPasswords.map((item) => {
                       const isRevealed = revealedIds.has(item.id);
                       const strength = item.securityScore || 70;
@@ -1457,6 +1491,7 @@ export const PasswordPage: React.FC<PasswordPageProps> = ({ onBack }) => {
                       );
                     })}
                   </div>
+                  )}
                 </div>
               )}
 

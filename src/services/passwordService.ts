@@ -1,4 +1,5 @@
 import { PasswordItem, PasswordVaultSettings, ExtensionSyncPayload } from '../types/password';
+import { INITIAL_PASSWORDS } from '../data/passwords';
 
 const PASSWORDS_STORAGE_KEY = 'erp_passwords_data';
 const VAULT_SETTINGS_KEY = 'erp_password_vault_settings';
@@ -77,15 +78,16 @@ export const passwordService = {
       const stored = localStorage.getItem(PASSWORDS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           // Lọc bỏ các tài khoản mật khẩu mẫu cũ (id dạng pw_001 .. pw_006)
-          return parsed.filter((p: PasswordItem) => !/^pw_00[1-6]$/.test(p.id));
+          const valid = parsed.filter((p: PasswordItem) => !/^pw_00[1-6]$/.test(p.id));
+          if (valid.length > 0) return valid;
         }
       }
     } catch (e) {
       console.error('Failed to parse cached passwords:', e);
     }
-    return [];
+    return INITIAL_PASSWORDS;
   },
 
   getVaultSettings(): PasswordVaultSettings {
@@ -126,7 +128,7 @@ export const passwordService = {
           await this.saveAllToSheet(local);
           return local;
         }
-        return [];
+        return INITIAL_PASSWORDS;
       }
     } catch (e) {
       console.warn('Google Sheet fetch for Passwords failed, using fallback cache:', e);
