@@ -139,6 +139,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   const prevEditIdRef = useRef<string | null | undefined>(undefined);
   const initialValuesRef = useRef<any>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const currentEditId = mode === 'edit' && task ? (task.id || task.code) : null;
@@ -627,6 +628,12 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Tab' && !e.shiftKey) {
+                      e.preventDefault();
+                      descriptionTextareaRef.current?.focus();
+                    }
+                  }}
                   placeholder="VD: Thiết kế giao diện báo cáo doanh thu..."
                   className={`w-full h-9 px-3 rounded-lg border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary ${
                     errors.title ? 'border-rose-500' : 'border-border'
@@ -641,6 +648,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   <label className="text-xs font-semibold text-foreground">Mô tả chi tiết nội dung công việc</label>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={handleConvertDescriptionToSubtasks}
                     disabled={!description.trim()}
                     title={
@@ -667,6 +675,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                     </span>
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={handleUndoConvert}
                       className="inline-flex items-center gap-1 text-xs font-semibold hover:underline cursor-pointer"
                     >
@@ -677,6 +686,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                 )}
 
                 <textarea
+                  ref={descriptionTextareaRef}
                   rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}

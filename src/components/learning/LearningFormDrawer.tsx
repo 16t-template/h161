@@ -688,6 +688,12 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    contentTextareaRef.current?.focus();
+                  }
+                }}
                 placeholder="VD: Nguyên lý Dependency Inversion trong Clean Architecture..."
                 className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
               />
@@ -705,6 +711,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                 <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40 text-xs">
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setEditorMode('write')}
                     className={`px-2 py-0.5 rounded font-medium transition-colors ${
                       editorMode === 'write' ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
@@ -714,6 +721,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setEditorMode('preview')}
                     className={`px-2 py-0.5 rounded font-medium transition-colors ${
                       editorMode === 'preview' ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
@@ -723,6 +731,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setEditorMode('split')}
                     className={`hidden sm:inline-block px-2 py-0.5 rounded font-medium transition-colors ${
                       editorMode === 'split' ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
@@ -738,64 +747,72 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                 <div className="flex flex-wrap items-center gap-1 p-1 bg-muted/40 border border-border border-b-0 rounded-t-lg text-xs text-muted-foreground">
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}\n### Tiêu đề phụ\n`)}
-                    className="px-1.5 py-0.5 hover:bg-background rounded"
+                    className="px-1.5 py-0.5 hover:bg-background rounded cursor-pointer"
                     title="Tiêu đề H3"
                   >
                     H3
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}**In đậm**`)}
-                    className="px-1.5 py-0.5 font-bold hover:bg-background rounded"
+                    className="px-1.5 py-0.5 font-bold hover:bg-background rounded cursor-pointer"
                     title="In đậm"
                   >
                     B
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}*In nghiêng*`)}
-                    className="px-1.5 py-0.5 italic hover:bg-background rounded"
+                    className="px-1.5 py-0.5 italic hover:bg-background rounded cursor-pointer"
                     title="In nghiêng"
                   >
                     I
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}\n- Mục 1\n- Mục 2\n`)}
-                    className="px-1.5 py-0.5 hover:bg-background rounded"
+                    className="px-1.5 py-0.5 hover:bg-background rounded cursor-pointer"
                     title="Danh sách gạch đầu dòng"
                   >
                     • List
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}\n> [!TIP]\n> Mẹo quan trọng ở đây...\n`)}
-                    className="px-1.5 py-0.5 hover:bg-background rounded"
+                    className="px-1.5 py-0.5 hover:bg-background rounded cursor-pointer"
                     title="Callout Mẹo"
                   >
                     💡 Mẹo
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}\n> [!NOTE]\n> Lưu ý ghi nhớ...\n`)}
-                    className="px-1.5 py-0.5 hover:bg-background rounded"
+                    className="px-1.5 py-0.5 hover:bg-background rounded cursor-pointer"
                     title="Callout Lưu ý"
                   >
                     📌 Lưu ý
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => prev + '\n```ts\n// Code ví dụ minh họa\nconst example = true;\n```\n')}
-                    className="px-1.5 py-0.5 font-mono hover:bg-background rounded"
+                    className="px-1.5 py-0.5 font-mono hover:bg-background rounded cursor-pointer"
                     title="Khối mã code"
                   >
                     {'</>'}
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContent((prev) => `${prev}\n| Khái niệm | Ý nghĩa |\n| --- | --- |\n| Term A | Định nghĩa A |\n`)}
-                    className="px-1.5 py-0.5 hover:bg-background rounded"
+                    className="px-1.5 py-0.5 hover:bg-background rounded cursor-pointer"
                     title="Bảng biểu"
                   >
                     📊 Bảng

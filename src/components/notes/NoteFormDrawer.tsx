@@ -978,6 +978,12 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                   setTitle(e.target.value);
                   if (formErrors.title) setFormErrors((prev) => ({ ...prev, title: '' }));
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    contentTextareaRef.current?.focus();
+                  }
+                }}
                 className={`w-full rounded-xl border ${
                   formErrors.title ? 'border-destructive ring-1 ring-destructive' : 'border-border'
                 } bg-background px-3.5 py-2 text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all`}
@@ -997,6 +1003,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                 <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40 text-xs">
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContentTab('edit')}
                     className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
                       contentTab === 'edit'
@@ -1008,6 +1015,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                   </button>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setContentTab('preview')}
                     className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
                       contentTab === 'preview'
@@ -1026,64 +1034,72 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                   <div className="flex flex-wrap items-center gap-0.5 p-1 rounded-lg border border-border/70 bg-muted/20 text-xs">
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Tiêu đề H1"
                       onClick={() => insertContentMarkup('# ')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Heading1 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Tiêu đề H2"
                       onClick={() => insertContentMarkup('## ')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Heading2 className="w-3.5 h-3.5" />
                     </button>
                     <div className="w-[1px] h-3.5 bg-border mx-0.5" />
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Chữ đậm"
                       onClick={() => insertContentMarkup('**', '**')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Bold className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Chữ nghiêng"
                       onClick={() => insertContentMarkup('*', '*')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Italic className="w-3.5 h-3.5" />
                     </button>
                     <div className="w-[1px] h-3.5 bg-border mx-0.5" />
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Danh sách gạch đầu dòng"
                       onClick={() => insertContentMarkup('- ')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <List className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Checklist công việc"
                       onClick={() => insertContentMarkup('- [ ] ')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <CheckSquare className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Khối mã nguồn"
                       onClick={() => insertContentMarkup('```typescript\n', '\n```')}
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Code className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Bảng dữ liệu"
                       onClick={() =>
                         insertContentMarkup(
@@ -1092,40 +1108,44 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                           ''
                         )
                       }
-                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors cursor-pointer"
                     >
                       <Table className="w-3.5 h-3.5" />
                     </button>
                     <div className="w-[1px] h-3.5 bg-border mx-0.5" />
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Hộp lưu ý (Note callout)"
                       onClick={() => insertContentMarkup('> [!NOTE]\n> ', '', 'Nội dung lưu ý...')}
-                      className="p-1 rounded hover:bg-muted text-primary transition-colors text-[11px] flex items-center gap-0.5"
+                      className="p-1 rounded hover:bg-muted text-primary transition-colors text-[11px] flex items-center gap-0.5 cursor-pointer"
                     >
                       <Info className="w-3 h-3" /> Note
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Hộp mẹo hay (Tip callout)"
                       onClick={() => insertContentMarkup('> [!TIP]\n> ', '', 'Mẹo hay...')}
-                      className="p-1 rounded hover:bg-muted text-emerald-600 dark:text-emerald-400 transition-colors text-[11px] flex items-center gap-0.5"
+                      className="p-1 rounded hover:bg-muted text-emerald-600 dark:text-emerald-400 transition-colors text-[11px] flex items-center gap-0.5 cursor-pointer"
                     >
                       <Lightbulb className="w-3 h-3" /> Mẹo
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Hộp cảnh báo (Warning callout)"
                       onClick={() => insertContentMarkup('> [!WARNING]\n> ', '', 'Cảnh báo...')}
-                      className="p-1 rounded hover:bg-muted text-amber-600 dark:text-amber-400 transition-colors text-[11px] flex items-center gap-0.5"
+                      className="p-1 rounded hover:bg-muted text-amber-600 dark:text-amber-400 transition-colors text-[11px] flex items-center gap-0.5 cursor-pointer"
                     >
                       <AlertTriangle className="w-3 h-3" /> Cảnh báo
                     </button>
                     <button
                       type="button"
+                      tabIndex={-1}
                       title="Chèn liên kết dạng >link : (bấm mở trực tiếp)"
                       onClick={() => insertContentMarkup('>link : https://', '', 'duong-dan-trang-web.com')}
-                      className="p-1 rounded hover:bg-muted text-sky-600 dark:text-sky-400 transition-colors text-[11px] flex items-center gap-0.5 font-semibold"
+                      className="p-1 rounded hover:bg-muted text-sky-600 dark:text-sky-400 transition-colors text-[11px] flex items-center gap-0.5 font-semibold cursor-pointer"
                     >
                       <Globe className="w-3 h-3" /> &gt;link :
                     </button>
