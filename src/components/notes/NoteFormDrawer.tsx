@@ -52,12 +52,14 @@ import { employeeService } from '../../services/employeeService';
 import { Employee } from '../../types/employee';
 import { generateId } from '../../utils/idGenerator';
 import { formatDate, toInputDateValue } from '../../utils/dateUtils';
+import { ModuleTabSwitcher, ModuleTabSwitcherProps } from '../common/ModuleTabSwitcher';
 
 interface NoteFormDrawerProps {
   isOpen: boolean;
   initialData?: Note | null;
   defaultDate?: string;
   existingTags?: string[];
+  moduleTabSwitcher?: ModuleTabSwitcherProps;
   onClose: () => void;
   onSubmit: (formData: Partial<Note>) => void;
 }
@@ -69,6 +71,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
   initialData,
   defaultDate,
   existingTags = [],
+  moduleTabSwitcher,
   onClose,
   onSubmit,
 }) => {
@@ -743,6 +746,16 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
             </div>
           </div>
 
+          {/* Module Tabs (Desktop / Tablet) */}
+          {moduleTabSwitcher && !isEdit && (
+            <div className="hidden sm:flex items-center">
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            </div>
+          )}
+
           {/* Width Controls & Close */}
           <div className="flex items-center gap-1 shrink-0">
             {/* Width Switcher (Tablet/Desktop) */}
@@ -800,6 +813,16 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Module Tabs (Mobile) */}
+        {moduleTabSwitcher && !isEdit && (
+          <div className="flex sm:hidden items-center justify-center px-3 py-1.5 border-b border-border bg-muted/20 shrink-0">
+            <ModuleTabSwitcher
+              activeModule={moduleTabSwitcher.activeModule}
+              onChangeModule={moduleTabSwitcher.onChangeModule}
+            />
+          </div>
+        )}
 
         {/* Paste Toast Notification */}
         {pasteToast && (

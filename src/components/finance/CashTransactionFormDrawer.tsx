@@ -55,6 +55,7 @@ import {
   TRANSFER_CATEGORIES,
 } from '../../data/cashTransactions';
 import { vndNumberToWords } from '../../utils/numberToWords';
+import { ModuleTabSwitcher, ModuleTabSwitcherProps } from '../common/ModuleTabSwitcher';
 
 interface AvailableAccountItem {
   id: string;
@@ -72,6 +73,7 @@ interface CashTransactionFormDrawerProps {
   initialType?: TransactionType;
   transactionToEdit?: CashTransaction | null;
   defaultDate?: string;
+  moduleTabSwitcher?: ModuleTabSwitcherProps;
   onClose: () => void;
   onSave: (tx: Partial<CashTransaction>) => Promise<void> | void;
   onNavigateToModule?: (path: string) => void;
@@ -84,6 +86,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
   initialType = 'expense',
   transactionToEdit,
   defaultDate,
+  moduleTabSwitcher,
   onClose,
   onSave,
 }) => {
@@ -666,6 +669,16 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
             </div>
           </div>
 
+          {/* Module Tabs (Desktop / Tablet) */}
+          {moduleTabSwitcher && !isEdit && (
+            <div className="hidden sm:flex items-center">
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            </div>
+          )}
+
           {/* Width Controls & Close */}
           <div className="flex items-center gap-1 shrink-0">
             <div
@@ -742,6 +755,16 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
             </button>
           </div>
         </div>
+
+        {/* Module Tabs (Mobile) */}
+        {moduleTabSwitcher && !isEdit && (
+          <div className="flex sm:hidden items-center justify-center px-3 py-1.5 border-b border-border bg-muted/20 shrink-0">
+            <ModuleTabSwitcher
+              activeModule={moduleTabSwitcher.activeModule}
+              onChangeModule={moduleTabSwitcher.onChangeModule}
+            />
+          </div>
+        )}
 
         {/* Scrollable Form Body */}
         <div className="flex-1 overflow-y-auto bg-muted/40 p-4 sm:p-5 custom-scrollbar">

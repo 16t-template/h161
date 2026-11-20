@@ -29,10 +29,12 @@ import { catboxService } from '../../services/catboxService';
 import { MarkdownRenderer } from '../notes/MarkdownRenderer';
 import { generateId } from '../../utils/idGenerator';
 import { formatDate, toInputDateValue } from '../../utils/dateUtils';
+import { ModuleTabSwitcher, ModuleTabSwitcherProps } from '../common/ModuleTabSwitcher';
 
 interface LearningFormDrawerProps {
   isOpen: boolean;
   defaultDate?: string;
+  moduleTabSwitcher?: ModuleTabSwitcherProps;
   onClose: () => void;
   onSave: (entry: LearningEntry) => void;
   initialEntry?: LearningEntry | null;
@@ -42,6 +44,7 @@ interface LearningFormDrawerProps {
 export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
   isOpen,
   defaultDate,
+  moduleTabSwitcher,
   onClose,
   onSave,
   initialEntry,
@@ -445,6 +448,16 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
               </div>
             </div>
 
+            {/* Module Tabs (Desktop / Tablet) */}
+            {moduleTabSwitcher && !isEditing && (
+              <div className="hidden sm:flex items-center">
+                <ModuleTabSwitcher
+                  activeModule={moduleTabSwitcher.activeModule}
+                  onChangeModule={moduleTabSwitcher.onChangeModule}
+                />
+              </div>
+            )}
+
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Width mode toggles for desktop */}
               <div className="hidden sm:flex items-center gap-0.5 border border-border rounded-lg p-0.5 bg-muted/40">
@@ -505,6 +518,16 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Module Tabs (Mobile) */}
+          {moduleTabSwitcher && !isEditing && (
+            <div className="flex sm:hidden items-center justify-center px-3 py-1.5 border-b border-border bg-muted/20 shrink-0">
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            </div>
+          )}
 
           {/* Toast Notice */}
           {pasteToast && (

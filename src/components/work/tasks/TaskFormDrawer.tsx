@@ -19,6 +19,7 @@ import { employeeService } from '../../../services/employeeService';
 import { projectService, taskService } from '../../../services/taskService';
 import { generateId } from '../../../utils/idGenerator';
 import { useAuth } from '../../../context/AuthContext';
+import { ModuleTabSwitcher, ModuleTabSwitcherProps } from '../../common/ModuleTabSwitcher';
 
 interface TaskFormDrawerProps {
   mode: 'create' | 'edit';
@@ -26,6 +27,7 @@ interface TaskFormDrawerProps {
   allTasks?: Task[];
   defaultStatus?: TaskStatus;
   defaultDate?: string;
+  moduleTabSwitcher?: ModuleTabSwitcherProps;
   onClose: () => void;
   onSave: (task: Task) => void;
 }
@@ -38,6 +40,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   allTasks = [],
   defaultStatus = 'todo',
   defaultDate,
+  moduleTabSwitcher,
   onClose,
   onSave,
 }) => {
@@ -395,6 +398,16 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               </div>
             </div>
 
+            {/* Module Tabs (Desktop / Tablet) */}
+            {moduleTabSwitcher && mode === 'create' && (
+              <div className="hidden sm:flex items-center">
+                <ModuleTabSwitcher
+                  activeModule={moduleTabSwitcher.activeModule}
+                  onChangeModule={moduleTabSwitcher.onChangeModule}
+                />
+              </div>
+            )}
+
             <div className="flex items-center gap-1">
               {/* Width Controls */}
               <div className="hidden md:flex items-center border border-border rounded-lg bg-background p-0.5 mr-1">
@@ -453,6 +466,16 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Module Tabs (Mobile) */}
+          {moduleTabSwitcher && mode === 'create' && (
+            <div className="flex sm:hidden items-center justify-center px-3 py-1.5 border-b border-border bg-muted/20 shrink-0">
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            </div>
+          )}
 
           {/* Form Content */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 custom-scrollbar">

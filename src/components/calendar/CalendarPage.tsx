@@ -20,7 +20,6 @@ import {
   Layers,
   CheckCircle2,
   GraduationCap,
-  X,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -36,7 +35,7 @@ import { CalendarAgendaView } from './CalendarAgendaView';
 import { CalendarStatsTab } from './CalendarStatsTab';
 import { EventDetailModal } from './EventDetailModal';
 import { generateId } from '../../utils/idGenerator';
-import { toLocalDateStr, formatDate } from '../../utils/dateUtils';
+import { toLocalDateStr } from '../../utils/dateUtils';
 import { getSafeAvatarUrl } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { MobileAddButton } from '../common/MobileFormHelpers';
@@ -190,10 +189,9 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   const [editingProposal, setEditingProposal] = useState<CostProposal | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  // Active Creation Form Drawer & Quick Date Choice Modal
+  // Active Creation Form Drawer
   const [activeAddDrawer, setActiveAddDrawer] = useState<'note' | 'task' | 'learning' | 'cash' | null>(null);
   const [addDrawerDate, setAddDrawerDate] = useState<string>('');
-  const [dateChoiceModal, setDateChoiceModal] = useState<{ isOpen: boolean; dateStr: string } | null>(null);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -215,7 +213,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
     setSelectedProposal(null);
     setSelectedCustomEvent(null);
     setActiveAddDrawer(null);
-    setDateChoiceModal(null);
     setEditingNote(null);
     setEditingTask(null);
     setEditingProject(null);
@@ -1084,7 +1081,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                     <div className="inline-flex rounded-lg shadow-sm">
                       <button
                         type="button"
-                        onClick={() => setDateChoiceModal({ isOpen: true, dateStr: toLocalDateStr(currentDate) })}
+                        onClick={() => openAddDrawer('note', toLocalDateStr(currentDate))}
                         className="h-8 px-2.5 rounded-l-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1182,7 +1179,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       month={currentMonth}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
+                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
                       onSelectDate={(date) => {
                         setCurrentDate(date);
                         setViewMode('day');
@@ -1196,7 +1193,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       currentDate={currentDate}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
+                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
                       onSelectDate={(date) => {
                         setCurrentDate(date);
                         setViewMode('day');
@@ -1210,7 +1207,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       currentDate={currentDate}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
+                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
                       onMoveEvent={handleMoveEvent}
                     />
                   )}
@@ -1241,7 +1238,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         </div>
       </div>
 
-      <MobileAddButton label="Thêm mới" onClick={() => setDateChoiceModal({ isOpen: true, dateStr: toLocalDateStr(currentDate) })} />
+      <MobileAddButton label="Thêm mới" onClick={() => openAddDrawer('note', toLocalDateStr(currentDate))} />
 
       {/* Module Detail Drawers */}
       {selectedNote && (
@@ -1507,143 +1504,20 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onDeleteCustomEvent={handleDeleteCustomEvent}
       />
 
-      {/* Date Choice Modal */}
-      {dateChoiceModal?.isOpen && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 overflow-y-auto">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
-            onClick={() => setDateChoiceModal(null)}
-          />
-
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div
-              className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl p-5 sm:p-6 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between pb-4 border-b border-border/60">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                    <CalendarIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Thêm mới vào Lịch biểu</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Ngày đã chọn: <span className="font-semibold text-primary">{formatDate(dateChoiceModal.dateStr)}</span>
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDateChoiceModal(null)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 4 Choices */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const date = dateChoiceModal.dateStr;
-                    setDateChoiceModal(null);
-                    openAddDrawer('note', date);
-                  }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-purple-500/50 hover:bg-purple-500/5 transition-all text-left group"
-                >
-                  <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform shrink-0">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                      Ghi chú
-                    </div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                      Ghi chép công việc, biên bản họp, nhật ký
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const date = dateChoiceModal.dateStr;
-                    setDateChoiceModal(null);
-                    openAddDrawer('task', date);
-                  }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group"
-                >
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform shrink-0">
-                    <CheckSquare className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                      Công việc
-                    </div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                      Phân công nhiệm vụ, đặt hạn chót (Deadline)
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const date = dateChoiceModal.dateStr;
-                    setDateChoiceModal(null);
-                    openAddDrawer('learning', date);
-                  }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all text-left group"
-                >
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
-                    <GraduationCap className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                      Học hỏi
-                    </div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                      Kiến thức, tài liệu học tập, chia sẻ kinh nghiệm
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const date = dateChoiceModal.dateStr;
-                    setDateChoiceModal(null);
-                    openAddDrawer('cash', date);
-                  }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-left group"
-                >
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
-                    <Wallet className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                      Thu / Chi
-                    </div>
-                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                      Phiếu thu tiền hoặc phiếu chi tài chính
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 1. Note Form Drawer (Create & Edit - Using standard NoteFormDrawer) */}
       <NoteFormDrawer
         isOpen={activeAddDrawer === 'note' || !!editingNote}
         initialData={editingNote}
         defaultDate={editingNote ? undefined : addDrawerDate}
         existingTags={Array.from(new Set(allNotesList.flatMap((n) => n.tags || [])))}
+        moduleTabSwitcher={
+          !editingNote && activeAddDrawer
+            ? {
+                activeModule: activeAddDrawer,
+                onChangeModule: (mod) => setActiveAddDrawer(mod),
+              }
+            : undefined
+        }
         onClose={() => {
           setActiveAddDrawer(null);
           setEditingNote(null);
@@ -1658,6 +1532,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
           task={editingTask}
           defaultDate={editingTask ? undefined : addDrawerDate}
           allTasks={allTasksList.length > 0 ? allTasksList : taskService.getInitialTasks()}
+          moduleTabSwitcher={
+            !editingTask && activeAddDrawer
+              ? {
+                  activeModule: activeAddDrawer,
+                  onChangeModule: (mod) => setActiveAddDrawer(mod),
+                }
+              : undefined
+          }
           onClose={() => {
             setActiveAddDrawer(null);
             setEditingTask(null);
@@ -1689,6 +1571,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         transactionToEdit={editingCashTx}
         initialType={editingCashTx?.type || 'expense'}
         defaultDate={editingCashTx ? undefined : addDrawerDate}
+        moduleTabSwitcher={
+          !editingCashTx && activeAddDrawer
+            ? {
+                activeModule: activeAddDrawer,
+                onChangeModule: (mod) => setActiveAddDrawer(mod),
+              }
+            : undefined
+        }
         onClose={() => {
           setActiveAddDrawer(null);
           setEditingCashTx(null);
@@ -1710,6 +1600,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         initialEntry={editingLearning}
         defaultDate={editingLearning ? undefined : addDrawerDate}
         allEntries={allLearningsList.length > 0 ? allLearningsList : learningService.getInitialEntries()}
+        moduleTabSwitcher={
+          !editingLearning && activeAddDrawer
+            ? {
+                activeModule: activeAddDrawer,
+                onChangeModule: (mod) => setActiveAddDrawer(mod),
+              }
+            : undefined
+        }
         onClose={() => {
           setActiveAddDrawer(null);
           setEditingLearning(null);
