@@ -12,6 +12,8 @@ import {
   PanelRightOpen,
   Maximize2,
   Minimize2,
+  ListChecks,
+  Undo2,
 } from 'lucide-react';
 import { Task, TaskPriority, TaskStatus, TaskSubtask, Project } from '../../../types/task';
 import { Employee } from '../../../types/employee';
@@ -243,6 +245,65 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       const doneCount = updated.filter((s) => s.completed).length;
       setProgress(Math.round((doneCount / updated.length) * 100));
     }
+  };
+
+  // Convert Description lines into Subtasks
+  const [lastConvertedState, setLastConvertedState] = useState<{
+    prevDescription: string;
+    addedSubtaskIds: string[];
+  } | null>(null);
+
+  const handleConvertDescriptionToSubtasks = () => {
+    if (!description.trim()) return;
+
+    const rawLines = description.split('\n');
+    const cleanedLines = rawLines
+      .map((line) => line.trim())
+      .map((line) => line.replace(/^[-*•+]\s+/, '').replace(/^\d+[\.\)]\s+/, '').replace(/^\[[ xX]?\]\s+/, '').trim())
+      .filter((line) => line.length > 0);
+
+    if (cleanedLines.length === 0) return;
+
+    const newSubtasks: TaskSubtask[] = cleanedLines.map((lineTitle) => ({
+      id: generateId('st'),
+      title: lineTitle,
+      completed: false,
+    }));
+
+    const addedIds = newSubtasks.map((st) => st.id);
+    setLastConvertedState({
+      prevDescription: description,
+      addedSubtaskIds: addedIds,
+    });
+
+    const updatedSubtasks = [...subtasks, ...newSubtasks];
+    setSubtasks(updatedSubtasks);
+
+    // Auto update progress based on subtasks
+    const doneCount = updatedSubtasks.filter((s) => s.completed).length;
+    setProgress(Math.round((doneCount / updatedSubtasks.length) * 100));
+
+    // Clear description
+    setDescription('');
+
+    // Smooth scroll down to subtasks section
+    setTimeout(() => {
+      document.getElementById('task-subtasks-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handleUndoConvert = () => {
+    if (!lastConvertedState) return;
+    setDescription(lastConvertedState.prevDescription);
+    const updatedSubtasks = subtasks.filter((st) => !lastConvertedState.addedSubtaskIds.includes(st.id));
+    setSubtasks(updatedSubtasks);
+    if (updatedSubtasks.length > 0) {
+      const doneCount = updatedSubtasks.filter((s) => s.completed).length;
+      setProgress(Math.round((doneCount / updatedSubtasks.length) * 100));
+    } else {
+      setProgress(0);
+    }
+    setLastConvertedState(null);
   };
 
   // Tags handler
@@ -522,13 +583,51 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
               {/* Description */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Mô tả chi tiết nội dung công việc</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground">Mô tả chi tiết nội dung công việc</label>
+                  <button
+                    type="button"
+                    onClick={handleConvertDescriptionToSubtasks}
+                    disabled={!description.trim()}
+                    title={
+                      description.trim()
+                        ? 'Chuyển từng dòng mô tả thành nhiệm vụ con (Checklist)'
+                        : 'Nhập nội dung mô tả để chuyển thành nhiệm vụ con'
+                    }
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-[11px] font-medium transition-all ${
+                      description.trim()
+                        ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs active:scale-95 font-semibold'
+                        : 'border-border/60 bg-muted/30 text-muted-foreground/60 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <ListChecks className="w-3.5 h-3.5" />
+                    <span>Chuyển thành nhiệm vụ con</span>
+                  </button>
+                </div>
+
+                {lastConvertedState && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs animate-in fade-in duration-200">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      Đã chuyển {lastConvertedState.addedSubtaskIds.length} dòng thành nhiệm vụ con!
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleUndoConvert}
+                      className="inline-flex items-center gap-1 text-xs font-semibold hover:underline cursor-pointer"
+                    >
+                      <Undo2 className="w-3 h-3" />
+                      <span>Hoàn tác</span>
+                    </button>
+                  </div>
+                )}
+
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Mô tả mục tiêu, yêu cầu đầu ra và tài liệu đính kèm..."
-                  className="w-full p-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Mô tả mục tiêu, yêu cầu đầu ra và tài liệu đính kèm... (có thể dán danh sách rồi bấm 'Chuyển thành nhiệm vụ con')"
+                  className="w-full p-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
                 />
               </div>
             </div>
@@ -715,7 +814,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             </div>
 
             {/* 6. Subtasks Checklist Builder */}
-            <div className="space-y-3 p-3.5 rounded-xl border border-border bg-card">
+            <div id="task-subtasks-section" className="space-y-3 p-3.5 rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <CheckSquare className="w-3.5 h-3.5 text-primary" />
