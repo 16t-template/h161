@@ -90,8 +90,8 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
   onClose,
   onSave,
 }) => {
-  const [widthMode, setWidthMode] = useState<DrawerWidthMode>('normal');
-  const [prevWidthMode, setPrevWidthMode] = useState<DrawerWidthMode>('normal');
+  const [widthMode, setWidthMode] = useState<DrawerWidthMode>('wide');
+  const [prevWidthMode, setPrevWidthMode] = useState<DrawerWidthMode>('wide');
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = !!transactionToEdit;
 
@@ -598,7 +598,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
 
   const toggleFullscreen = () => {
     if (widthMode === 'fullscreen') {
-      setWidthMode(prevWidthMode || 'normal');
+      setWidthMode(prevWidthMode || 'wide');
     } else {
       setPrevWidthMode(widthMode);
       setWidthMode('fullscreen');
@@ -611,14 +611,14 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
     }
     switch (widthMode) {
       case 'narrow':
-        return 'min(540px, 100vw)';
-      case 'wide':
-        return 'min(1024px, 100vw)';
-      case 'fullscreen':
-        return '100vw';
+        return 'min(560px, 100vw)';
       case 'normal':
+        return 'min(780px, 100vw)';
+      case 'wide':
+        return 'min(1080px, 100vw)';
+      case 'fullscreen':
       default:
-        return 'min(768px, -6rem + 100vw)';
+        return '100vw';
     }
   };
 
@@ -628,7 +628,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
@@ -646,55 +646,53 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
       >
         {/* Top Header */}
         <div
-          className="flex items-center justify-between gap-4 border-b border-border bg-card shrink-0"
+          className="flex items-center justify-between gap-2 border-b border-border bg-card shrink-0 px-4 sm:px-6 h-16"
           style={{
             paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
             paddingBottom: '0.5rem',
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
           }}
         >
           {/* Title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 w-[240px] sm:w-[260px] shrink-0">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
               <Receipt className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-semibold text-foreground leading-tight truncate">
-                {isEdit ? `Chỉnh sửa chứng từ ${code}` : 'Lập Phiếu Thu / Chi'}
+              <h3 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
+                {isEdit ? `Chỉnh sửa: ${code}` : 'Tạo Phiếu Thu / Chi'}
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                {isEdit ? title || code : 'Điền thông tin thu chi'}
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                {isEdit ? (title || code) : 'Quản lý thu chi & dòng tiền'}
               </p>
             </div>
           </div>
 
           {/* Module Tabs (Desktop / Tablet) */}
-          {moduleTabSwitcher && !isEdit && (
-            <div className="hidden sm:flex items-center">
+          <div className="hidden sm:flex items-center justify-center flex-1 px-2 min-w-0">
+            {moduleTabSwitcher && !isEdit && (
               <ModuleTabSwitcher
                 activeModule={moduleTabSwitcher.activeModule}
                 onChangeModule={moduleTabSwitcher.onChangeModule}
               />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Width Controls & Close */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center justify-end gap-1 w-[240px] sm:w-[260px] shrink-0">
             <div
               role="group"
               aria-label="Bề rộng ngăn bên"
-              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5"
+              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5 bg-muted/20"
             >
               <button
                 type="button"
                 aria-pressed={widthMode === 'narrow'}
                 aria-label="Hẹp"
-                title="Hẹp"
+                title="Hẹp (560px)"
                 onClick={() => setWidthMode('narrow')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
                   widthMode === 'narrow'
-                    ? 'bg-muted text-foreground'
+                    ? 'bg-card text-foreground shadow-2xs font-bold'
                     : 'text-muted-foreground'
                 }`}
               >
@@ -704,11 +702,11 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
                 type="button"
                 aria-pressed={widthMode === 'normal'}
                 aria-label="Chuẩn"
-                title="Chuẩn"
+                title="Chuẩn (780px)"
                 onClick={() => setWidthMode('normal')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
                   widthMode === 'normal'
-                    ? 'bg-muted text-foreground'
+                    ? 'bg-card text-foreground shadow-2xs font-bold'
                     : 'text-muted-foreground'
                 }`}
               >
@@ -718,11 +716,11 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
                 type="button"
                 aria-pressed={widthMode === 'wide'}
                 aria-label="Rộng"
-                title="Rộng"
+                title="Rộng (1080px)"
                 onClick={() => setWidthMode('wide')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
                   widthMode === 'wide'
-                    ? 'bg-muted text-foreground'
+                    ? 'bg-card text-foreground shadow-2xs font-bold'
                     : 'text-muted-foreground'
                 }`}
               >
@@ -735,7 +733,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
               onClick={toggleFullscreen}
               aria-label={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
               title={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
-              className="p-2 rounded-lg text-muted-foreground transition-colors active:scale-90 hover:bg-muted hover:text-foreground"
+              className="hidden sm:flex p-1.5 rounded-lg text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-foreground"
             >
               {widthMode === 'fullscreen' ? (
                 <Minimize2 className="w-4 h-4 stroke-[2.5px]" />
@@ -749,7 +747,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
               onClick={onClose}
               aria-label="Đóng"
               title="Đóng"
-              className="p-2.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-90 shrink-0"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
             >
               <X className="w-5 h-5 stroke-[2.5px]" />
             </button>
@@ -767,7 +765,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
         )}
 
         {/* Scrollable Form Body */}
-        <div className="flex-1 overflow-y-auto bg-muted/40 p-4 sm:p-5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto bg-card p-4 sm:p-6 custom-scrollbar">
           <div className="max-w-4xl mx-auto">
             <form id="cash-tx-form" onSubmit={handleSubmit} className="space-y-4">
               {/* Type Switcher Segmented Control */}
@@ -1403,41 +1401,36 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
 
         {/* Sticky Footer */}
         <div
-          className="bg-card border-t border-border flex flex-col-reverse sm:flex-row items-center shrink-0 w-full gap-2 z-10"
+          className="border-t border-border bg-card/95 backdrop-blur-xs shrink-0 px-4 sm:px-6 py-3 flex items-center justify-end gap-2.5 z-10"
           style={{
-            paddingTop: '0.5rem',
-            paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
           }}
         >
-          <div className="flex items-center justify-between w-full gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-muted h-8 px-3 text-xs text-muted-foreground hover:text-foreground border border-border cursor-pointer"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              form="cash-tx-form"
-              disabled={isSaving}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer"
-            >
-              {isSaving ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-1.5" />
-                  <span>Đang lưu...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                  <span>{isEdit ? 'Cập nhật' : 'Lưu chứng từ'}</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            form="cash-tx-form"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            {isSaving ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-1.5" />
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                <span>{isEdit ? 'Lưu thay đổi' : 'Lưu chứng từ'}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </>

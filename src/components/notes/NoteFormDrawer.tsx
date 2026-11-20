@@ -6,6 +6,8 @@ import {
   PanelRightClose,
   PanelRight,
   PanelRightOpen,
+  Maximize2,
+  Minimize2,
   Save,
   Image as ImageIcon,
   MapPin,
@@ -77,6 +79,16 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [widthMode, setWidthMode] = useState<WidthMode>('wide');
+  const [prevWidthMode, setPrevWidthMode] = useState<WidthMode>('wide');
+
+  const toggleFullscreen = () => {
+    if (widthMode === 'fullscreen') {
+      setWidthMode(prevWidthMode || 'wide');
+    } else {
+      setPrevWidthMode(widthMode);
+      setWidthMode('fullscreen');
+    }
+  };
   const isEdit = !!initialData;
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -348,9 +360,9 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
     }
     switch (widthMode) {
       case 'narrow':
-        return 'min(600px, 100vw)';
+        return 'min(560px, 100vw)';
       case 'normal':
-        return 'min(820px, -4rem + 100vw)';
+        return 'min(780px, 100vw)';
       case 'wide':
         return 'min(1080px, 100vw)';
       case 'fullscreen':
@@ -723,16 +735,14 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between gap-4 border-b border-border bg-card shrink-0"
+          className="flex items-center justify-between gap-2 border-b border-border bg-card shrink-0 px-4 sm:px-6 h-16"
           style={{
             paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
             paddingBottom: '0.5rem',
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
           }}
         >
           {/* Title */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0 w-[240px] sm:w-[260px] shrink-0">
             <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
               <FileText className="w-5 h-5" />
             </div>
@@ -740,38 +750,38 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
               <h3 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
                 {isEdit ? 'Chỉnh sửa Ghi chú' : 'Tạo mới Ghi chú'}
               </h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
-                {isEdit ? (title || 'Cập nhật thông tin ghi chú') : 'Soạn thảo nội dung và phân loại ghi chú'}
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                {isEdit ? (title || 'Cập nhật thông tin ghi chú') : 'Soạn thảo nội dung và phân loại'}
               </p>
             </div>
           </div>
 
           {/* Module Tabs (Desktop / Tablet) */}
-          {moduleTabSwitcher && !isEdit && (
-            <div className="hidden sm:flex items-center">
+          <div className="hidden sm:flex items-center justify-center flex-1 px-2 min-w-0">
+            {moduleTabSwitcher && !isEdit && (
               <ModuleTabSwitcher
                 activeModule={moduleTabSwitcher.activeModule}
                 onChangeModule={moduleTabSwitcher.onChangeModule}
               />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Width Controls & Close */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center justify-end gap-1 w-[240px] sm:w-[260px] shrink-0">
             {/* Width Switcher (Tablet/Desktop) */}
             <div
               role="group"
               aria-label="Bề rộng ngăn bên"
-              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5"
+              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5 bg-muted/20"
             >
               <button
                 type="button"
                 aria-pressed={widthMode === 'narrow'}
                 aria-label="Hẹp"
-                title="Hẹp"
+                title="Hẹp (560px)"
                 onClick={() => setWidthMode('narrow')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
-                  widthMode === 'narrow' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'narrow' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
                 }`}
               >
                 <PanelRightClose className="w-4 h-4 stroke-[2.5px]" />
@@ -780,10 +790,10 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                 type="button"
                 aria-pressed={widthMode === 'normal'}
                 aria-label="Chuẩn"
-                title="Chuẩn"
+                title="Chuẩn (780px)"
                 onClick={() => setWidthMode('normal')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
-                  widthMode === 'normal' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'normal' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
                 }`}
               >
                 <PanelRight className="w-4 h-4 stroke-[2.5px]" />
@@ -792,10 +802,10 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                 type="button"
                 aria-pressed={widthMode === 'wide'}
                 aria-label="Rộng"
-                title="Rộng"
+                title="Rộng (1080px)"
                 onClick={() => setWidthMode('wide')}
-                className={`p-2 rounded-lg transition-colors active:scale-90 hover:bg-muted hover:text-foreground ${
-                  widthMode === 'wide' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'wide' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
                 }`}
               >
                 <PanelRightOpen className="w-4 h-4 stroke-[2.5px]" />
@@ -804,12 +814,26 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 
             <button
               type="button"
+              onClick={toggleFullscreen}
+              aria-label={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              title={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              className="hidden sm:flex p-1.5 rounded-lg text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-foreground"
+            >
+              {widthMode === 'fullscreen' ? (
+                <Minimize2 className="w-4 h-4 stroke-[2.5px]" />
+              ) : (
+                <Maximize2 className="w-4 h-4 stroke-[2.5px]" />
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={onClose}
               aria-label="Đóng"
               title="Đóng"
-              className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-90 shrink-0"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 stroke-[2.5px]" />
             </button>
           </div>
         </div>
@@ -1795,31 +1819,26 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 
         {/* Sticky Footer */}
         <div
-          className="border-t border-border bg-card shrink-0"
+          className="border-t border-border bg-card/95 backdrop-blur-xs shrink-0 px-4 sm:px-6 py-3 flex items-center justify-end gap-2.5"
           style={{
-            paddingTop: '0.75rem',
             paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
-            paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
           }}
         >
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-3 text-xs border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              form="note-form"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-              {isEdit ? 'Lưu thay đổi' : 'Lưu ghi chú'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            form="note-form"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
+          >
+            <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+            <span>{isEdit ? 'Lưu thay đổi' : 'Lưu ghi chú'}</span>
+          </button>
         </div>
       </div>
 

@@ -268,17 +268,19 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   };
 
   const getDrawerWidthStyle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return '100vw';
+    }
     switch (widthMode) {
       case 'narrow':
-        return 'min(540px, 100vw)';
+        return 'min(560px, 100vw)';
       case 'normal':
-        return 'min(768px, 100vw)';
+        return 'min(780px, 100vw)';
       case 'wide':
         return 'min(1080px, 100vw)';
       case 'fullscreen':
-        return '100vw';
       default:
-        return 'min(1080px, 100vw)';
+        return '100vw';
     }
   };
 
@@ -370,102 +372,123 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
       {/* Main Drawer Container */}
       <div
-        className="fixed inset-y-0 right-0 z-50 flex flex-col bg-card border-l border-border shadow-2xl transition-[width] duration-300 ease-in-out"
+        className="fixed inset-y-0 right-0 z-50 flex flex-col bg-card shadow-2xl border-l border-border transition-all duration-200 ease-in-out"
         style={{
           width: getDrawerWidthStyle(),
           maxWidth: '100vw',
+          transform: 'none',
         }}
       >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                <CheckSquare className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-foreground leading-tight">
-                  {mode === 'create' ? 'Thêm công việc mới' : `Cập nhật công việc: ${code}`}
-                </h2>
-                <p className="text-[11px] text-muted-foreground">
-                  Phân công nhiệm vụ, thiết lập tiến độ và thời hạn hoàn thành
-                </p>
-              </div>
+        {/* Header */}
+        <div
+          className="flex items-center justify-between gap-2 border-b border-border bg-card shrink-0 px-4 sm:px-6 h-16"
+          style={{
+            paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
+            paddingBottom: '0.5rem',
+          }}
+        >
+          {/* Title */}
+          <div className="flex items-center gap-2.5 min-w-0 w-[240px] sm:w-[260px] shrink-0">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+              <CheckSquare className="w-5 h-5" />
             </div>
-
-            {/* Module Tabs (Desktop / Tablet) */}
-            {moduleTabSwitcher && mode === 'create' && (
-              <div className="hidden sm:flex items-center">
-                <ModuleTabSwitcher
-                  activeModule={moduleTabSwitcher.activeModule}
-                  onChangeModule={moduleTabSwitcher.onChangeModule}
-                />
-              </div>
-            )}
-
-            <div className="flex items-center gap-1">
-              {/* Width Controls */}
-              <div className="hidden md:flex items-center border border-border rounded-lg bg-background p-0.5 mr-1">
-                <button
-                  type="button"
-                  title="Gọn"
-                  onClick={() => setWidthMode('narrow')}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    widthMode === 'narrow' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRightClose className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Vừa"
-                  onClick={() => setWidthMode('normal')}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    widthMode === 'normal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Rộng"
-                  onClick={() => setWidthMode('wide')}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    widthMode === 'wide' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRightOpen className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Toàn màn hình'}
-                  onClick={toggleFullscreen}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    widthMode === 'fullscreen' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {widthMode === 'fullscreen' ? (
-                    <Minimize2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <Maximize2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
+                {mode === 'create' ? 'Thêm công việc mới' : `Cập nhật: ${code}`}
+              </h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                Phân công nhiệm vụ và tiến độ
+              </p>
             </div>
           </div>
+
+          {/* Module Tabs (Desktop / Tablet) */}
+          <div className="hidden sm:flex items-center justify-center flex-1 px-2 min-w-0">
+            {moduleTabSwitcher && mode === 'create' && (
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            )}
+          </div>
+
+          {/* Width Controls & Close */}
+          <div className="flex items-center justify-end gap-1 w-[240px] sm:w-[260px] shrink-0">
+            {/* Width Switcher (Tablet/Desktop) */}
+            <div
+              role="group"
+              aria-label="Bề rộng ngăn bên"
+              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5 bg-muted/20"
+            >
+              <button
+                type="button"
+                aria-pressed={widthMode === 'narrow'}
+                aria-label="Hẹp"
+                title="Hẹp (560px)"
+                onClick={() => setWidthMode('narrow')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'narrow' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRightClose className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={widthMode === 'normal'}
+                aria-label="Chuẩn"
+                title="Chuẩn (780px)"
+                onClick={() => setWidthMode('normal')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'normal' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRight className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={widthMode === 'wide'}
+                aria-label="Rộng"
+                title="Rộng (1080px)"
+                onClick={() => setWidthMode('wide')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'wide' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRightOpen className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              title={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              className="hidden sm:flex p-1.5 rounded-lg text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-foreground"
+            >
+              {widthMode === 'fullscreen' ? (
+                <Minimize2 className="w-4 h-4 stroke-[2.5px]" />
+              ) : (
+                <Maximize2 className="w-4 h-4 stroke-[2.5px]" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng"
+              title="Đóng"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
+            >
+              <X className="w-5 h-5 stroke-[2.5px]" />
+            </button>
+          </div>
+        </div>
 
           {/* Module Tabs (Mobile) */}
           {moduleTabSwitcher && mode === 'create' && (
@@ -821,21 +844,26 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-muted/30">
+          <div
+            className="border-t border-border bg-card/95 backdrop-blur-xs shrink-0 px-4 sm:px-6 py-3 flex items-center justify-end gap-2.5"
+            style={{
+              paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted text-foreground text-xs font-medium transition-colors"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
             >
-              Hủy bỏ
+              Hủy
             </button>
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
             >
-              <Save className="w-4 h-4" />
-              <span>{mode === 'create' ? 'Tạo công việc' : 'Lưu thay đổi'}</span>
+              <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+              <span>{mode === 'create' ? 'Lưu công việc' : 'Lưu thay đổi'}</span>
             </button>
           </div>
       </div>

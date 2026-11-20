@@ -16,6 +16,8 @@ import {
   PanelRightClose,
   PanelRight,
   PanelRightOpen,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import {
   LearningEntry,
@@ -51,7 +53,35 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
   allEntries = [],
 }) => {
   const isEditing = !!initialEntry;
-  const [widthMode, setWidthMode] = useState<'narrow' | 'normal' | 'wide'>('wide');
+  type DrawerWidthMode = 'narrow' | 'normal' | 'wide' | 'fullscreen';
+  const [widthMode, setWidthMode] = useState<DrawerWidthMode>('wide');
+  const [prevWidthMode, setPrevWidthMode] = useState<DrawerWidthMode>('wide');
+
+  const toggleFullscreen = () => {
+    if (widthMode === 'fullscreen') {
+      setWidthMode(prevWidthMode || 'wide');
+    } else {
+      setPrevWidthMode(widthMode);
+      setWidthMode('fullscreen');
+    }
+  };
+
+  const getWidthStyle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return '100vw';
+    }
+    switch (widthMode) {
+      case 'narrow':
+        return 'min(560px, 100vw)';
+      case 'normal':
+        return 'min(780px, 100vw)';
+      case 'wide':
+        return 'min(1080px, 100vw)';
+      case 'fullscreen':
+      default:
+        return '100vw';
+    }
+  };
 
   // Form states
   const [title, setTitle] = useState('');
@@ -422,102 +452,126 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={onClose}
+      />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+      {/* Main Drawer Container */}
+      <div
+        className="fixed inset-y-0 right-0 z-50 flex flex-col bg-card shadow-2xl border-l border-border transition-all duration-200 ease-in-out"
+        style={{
+          width: getWidthStyle(),
+          maxWidth: '100vw',
+          transform: 'none',
+        }}
+      >
+        {/* Header */}
         <div
-          className={`w-screen max-w-full ${
-            widthMode === 'narrow' ? 'sm:max-w-xl' : widthMode === 'normal' ? 'sm:max-w-3xl' : 'sm:max-w-5xl'
-          } bg-card border-l border-border shadow-2xl flex flex-col transition-all duration-200`}
+          className="flex items-center justify-between gap-2 border-b border-border bg-card shrink-0 px-4 sm:px-6 h-16"
+          style={{
+            paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
+            paddingBottom: '0.5rem',
+          }}
         >
-          {/* Header */}
-          <div className="px-4 sm:px-6 py-3.5 border-b border-border bg-card flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm sm:text-base font-bold text-foreground truncate">
-                  {isEditing ? `Chỉnh sửa: ${initialEntry.code}` : 'Thêm kiến thức / Bài học mới'}
-                </h2>
-                <p className="text-[11px] text-muted-foreground truncate hidden sm:block">
-                  Ghi chép kiến thức, đính kèm hình ảnh qua Catbox và liên kết tham khảo.
-                </p>
-              </div>
+          {/* Title */}
+          <div className="flex items-center gap-2.5 min-w-0 w-[240px] sm:w-[260px] shrink-0">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+              <BookOpen className="w-5 h-5" />
             </div>
-
-            {/* Module Tabs (Desktop / Tablet) */}
-            {moduleTabSwitcher && !isEditing && (
-              <div className="hidden sm:flex items-center">
-                <ModuleTabSwitcher
-                  activeModule={moduleTabSwitcher.activeModule}
-                  onChangeModule={moduleTabSwitcher.onChangeModule}
-                />
-              </div>
-            )}
-
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Width mode toggles for desktop */}
-              <div className="hidden sm:flex items-center gap-0.5 border border-border rounded-lg p-0.5 bg-muted/40">
-                <button
-                  type="button"
-                  aria-label="Thu hẹp"
-                  title="Thu hẹp"
-                  onClick={() => setWidthMode('narrow')}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    widthMode === 'narrow' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRightClose className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Vừa"
-                  title="Vừa (Mặc định)"
-                  onClick={() => setWidthMode('normal')}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    widthMode === 'normal' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Rộng"
-                  title="Mở rộng"
-                  onClick={() => setWidthMode('wide')}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    widthMode === 'wide' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <PanelRightOpen className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsPinned(!isPinned)}
-                title={isPinned ? 'Đang ghim (Bấm để bỏ ghim)' : 'Ghim bài học này'}
-                className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                  isPinned
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
-                    : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Pin className={`w-4 h-4 ${isPinned ? 'fill-current' : ''}`} />
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
+                {isEditing ? `Chỉnh sửa: ${initialEntry.code}` : 'Thêm kiến thức mới'}
+              </h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                Ghi chép bài học & kinh nghiệm
+              </p>
             </div>
           </div>
+
+          {/* Module Tabs (Desktop / Tablet) */}
+          <div className="hidden sm:flex items-center justify-center flex-1 px-2 min-w-0">
+            {moduleTabSwitcher && !isEditing && (
+              <ModuleTabSwitcher
+                activeModule={moduleTabSwitcher.activeModule}
+                onChangeModule={moduleTabSwitcher.onChangeModule}
+              />
+            )}
+          </div>
+
+          {/* Width Controls & Close */}
+          <div className="flex items-center justify-end gap-1 w-[240px] sm:w-[260px] shrink-0">
+            {/* Width Switcher (Tablet/Desktop) */}
+            <div
+              role="group"
+              aria-label="Bề rộng ngăn bên"
+              className="hidden sm:flex items-center gap-0.5 shrink-0 rounded-xl border border-border p-0.5 bg-muted/20"
+            >
+              <button
+                type="button"
+                aria-pressed={widthMode === 'narrow'}
+                aria-label="Hẹp"
+                title="Hẹp (560px)"
+                onClick={() => setWidthMode('narrow')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'narrow' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRightClose className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={widthMode === 'normal'}
+                aria-label="Chuẩn"
+                title="Chuẩn (780px)"
+                onClick={() => setWidthMode('normal')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'normal' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRight className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={widthMode === 'wide'}
+                aria-label="Rộng"
+                title="Rộng (1080px)"
+                onClick={() => setWidthMode('wide')}
+                className={`p-1.5 rounded-lg transition-colors active:scale-95 hover:bg-muted hover:text-foreground ${
+                  widthMode === 'wide' ? 'bg-card text-foreground shadow-2xs font-bold' : 'text-muted-foreground'
+                }`}
+              >
+                <PanelRightOpen className="w-4 h-4 stroke-[2.5px]" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              title={widthMode === 'fullscreen' ? 'Thu nhỏ' : 'Mở toàn màn hình'}
+              className="hidden sm:flex p-1.5 rounded-lg text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-foreground"
+            >
+              {widthMode === 'fullscreen' ? (
+                <Minimize2 className="w-4 h-4 stroke-[2.5px]" />
+              ) : (
+                <Maximize2 className="w-4 h-4 stroke-[2.5px]" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng"
+              title="Đóng"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
+            >
+              <X className="w-5 h-5 stroke-[2.5px]" />
+            </button>
+          </div>
+        </div>
 
           {/* Module Tabs (Mobile) */}
           {moduleTabSwitcher && !isEditing && (
@@ -1098,7 +1152,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
             </div>
 
             {/* Dates: Entry Date & Next Review Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1">Ngày ghi nhận kiến thức</label>
                 <input
@@ -1110,9 +1164,24 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Ngày cần ôn lại (Spaced Repetition)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Ngày cần ôn lại
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPinned(!isPinned)}
+                    title={isPinned ? 'Bỏ ghim' : 'Ghim bài học'}
+                    className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border transition-colors cursor-pointer ${
+                      isPinned
+                        ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold'
+                        : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <Pin className={`w-3 h-3 ${isPinned ? 'fill-current' : ''}`} />
+                    <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
+                  </button>
+                </div>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="date"
@@ -1135,26 +1204,30 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
           </form>
 
           {/* Footer Actions */}
-          <div className="px-4 sm:px-6 py-3 border-t border-border bg-card flex items-center justify-between shrink-0">
+          <div
+            className="border-t border-border bg-card/95 backdrop-blur-xs shrink-0 px-4 sm:px-6 py-3 flex items-center justify-end gap-2.5"
+            style={{
+              paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-xs font-medium text-foreground transition-colors"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
             >
-              Hủy bỏ
+              Hủy
             </button>
 
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
               <span>{isEditing ? 'Lưu thay đổi' : 'Lưu kiến thức'}</span>
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </>
   );
 };
