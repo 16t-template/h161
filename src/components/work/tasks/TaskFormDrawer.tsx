@@ -534,7 +534,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             </div>
 
             {/* 2. Dự án, Người giao việc & Người thực hiện chính */}
-            <div className="p-3.5 rounded-xl border border-border bg-muted/20">
+            <div className="p-3.5 rounded-xl border border-border bg-card">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Dự án trực thuộc */}
                 <div className="space-y-1">

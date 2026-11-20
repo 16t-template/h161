@@ -853,7 +853,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
                 </div>
 
                 {/* 2. Amount Box - Số tiền giao dịch & Bằng chữ (Đưa lên trên, ngay sau lý do) */}
-                <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2">
+                <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
                   <label className="text-xs font-bold flex items-center gap-1.5 text-foreground">
                     <CreditCard className="w-3.5 h-3.5 text-primary" />
                     <span>Số tiền giao dịch (VNĐ)</span> <span className="text-destructive">*</span>

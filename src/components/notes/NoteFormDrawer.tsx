@@ -1081,7 +1081,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
             </div>
 
             {/* 3. Hàng thuộc tính nhanh (Ngày, Giờ, Trạng thái, Tác giả, Ghim) - Đưa xuống dưới Nội dung chi tiết */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3 rounded-xl bg-card border border-border">
               {/* Ngày thực hiện */}
               <div className="col-span-1">
                 <div className="flex items-center justify-between mb-1">
@@ -1397,7 +1397,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                 </div>
 
                 {/* 5. Thanh nút chuyển nhanh sang chi tiết mở rộng */}
-                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/30 border border-border/70 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-card border border-border text-xs">
                   <span className="text-muted-foreground font-medium text-[11px]">Bổ sung thêm:</span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
@@ -1571,7 +1571,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 border border-dashed border-border rounded-xl bg-muted/20">
+                    <div className="text-center py-6 border border-dashed border-border rounded-xl bg-background">
                       <p className="text-xs text-muted-foreground">
                         Chưa có ảnh đính kèm. Bấm nút <strong>"Tải ảnh lên"</strong> hoặc nhấn <strong>Ctrl + V</strong> để dán ảnh.
                       </p>
@@ -1789,7 +1789,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                   )}
 
                   {/* Available icons to pick */}
-                  <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-muted/20 border border-border/60 max-h-[220px] overflow-y-auto">
+                  <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-background border border-border/60 max-h-[220px] overflow-y-auto">
                     {displayedIcons.map((item) => {
                       const isSelected = icons.includes(item.emoji);
                       return (

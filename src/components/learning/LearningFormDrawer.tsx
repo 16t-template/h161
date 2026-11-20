@@ -840,7 +840,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
             </div>
 
             {/* Cover Image & Image Upload to Catbox */}
-            <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2.5">
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-violet-500" />
