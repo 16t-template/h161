@@ -754,6 +754,57 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
               </div>
             </div>
 
+            {/* Dates: Entry Date & Next Review Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">Ngày ghi nhận kiến thức</label>
+                <input
+                  type="date"
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    Ngày cần ôn lại
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPinned(!isPinned)}
+                    title={isPinned ? 'Bỏ ghim' : 'Ghim bài học'}
+                    className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border transition-colors cursor-pointer ${
+                      isPinned
+                        ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold'
+                        : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <Pin className={`w-3 h-3 ${isPinned ? 'fill-current' : ''}`} />
+                    <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    value={nextReviewDate}
+                    onChange={(e) => setNextReviewDate(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
+                  />
+                  {nextReviewDate && (
+                    <button
+                      type="button"
+                      onClick={() => setNextReviewDate('')}
+                      className="text-xs text-muted-foreground hover:text-foreground shrink-0 underline"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Tags (Đưa xuống dưới Nội dung) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -1147,57 +1198,6 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
                     <Plus className="w-3 h-3" />
                     <span>Thêm</span>
                   </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Dates: Entry Date & Next Review Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">Ngày ghi nhận kiến thức</label>
-                <input
-                  type="date"
-                  value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    Ngày cần ôn lại
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsPinned(!isPinned)}
-                    title={isPinned ? 'Bỏ ghim' : 'Ghim bài học'}
-                    className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border transition-colors cursor-pointer ${
-                      isPinned
-                        ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold'
-                        : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <Pin className={`w-3 h-3 ${isPinned ? 'fill-current' : ''}`} />
-                    <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
-                  </button>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="date"
-                    value={nextReviewDate}
-                    onChange={(e) => setNextReviewDate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
-                  />
-                  {nextReviewDate && (
-                    <button
-                      type="button"
-                      onClick={() => setNextReviewDate('')}
-                      className="text-xs text-muted-foreground hover:text-foreground shrink-0 underline"
-                    >
-                      Xóa
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
