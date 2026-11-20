@@ -39,7 +39,7 @@ export const learningService = {
     return localStorage.getItem(LAST_SYNC_KEY);
   },
 
-  async fetchFromSheet(): Promise<LearningEntry[]> {
+  async fetchFromSheet(strict = false): Promise<LearningEntry[]> {
     try {
       const res = await fetch('/api/sheets/learning');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -51,6 +51,7 @@ export const learningService = {
       }
       return this.getInitialEntries();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Failed to fetch learning entries from Google Sheet, fallback to cache:', err);
       return this.getInitialEntries();
     }

@@ -36,7 +36,7 @@ export const googleSheetsService = {
   },
 
   // Fetch live from Google Sheets via backend API
-  async fetchFromSheet(): Promise<CostProposal[]> {
+  async fetchFromSheet(strict = false): Promise<CostProposal[]> {
     try {
       const res = await fetch('/api/sheets/proposals');
       if (!res.ok) {
@@ -49,6 +49,7 @@ export const googleSheetsService = {
       }
       return this.getInitialProposals();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Failed to fetch proposals from Google Sheet API, using local cache:', err);
       return this.getInitialProposals();
     }

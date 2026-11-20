@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { webcrypto } from 'node:crypto';
+import { sheetsFetch as fetch } from './sheetsFetch.mjs';
 
 const SPREADSHEET_ID = '1Cx_84szeCGKoLhCSqumeCzKLCErXg1YStQeI_Lrq4nw';
 const SERVICE_ACCOUNT_PATH = path.resolve(process.cwd(), 'service-account.json');
@@ -143,7 +144,7 @@ export async function getAccessToken() {
 
 // ---------------------- SMART IN-MEMORY CACHE (TTL 5s) ----------------------
 const serverCache = new Map();
-const CACHE_TTL_MS = 5000; // 5 seconds cache to protect Google API quota
+const CACHE_TTL_MS = 60000; // Reuse reads for one minute; mutations invalidate their module cache.
 
 export function getCachedSheetData(key) {
   const item = serverCache.get(key);

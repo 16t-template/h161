@@ -32,7 +32,7 @@ export const employeeService = {
     return localStorage.getItem(LAST_SYNC_KEY);
   },
 
-  async fetchFromSheet(): Promise<Employee[]> {
+  async fetchFromSheet(strict = false): Promise<Employee[]> {
     try {
       const res = await fetch('/api/sheets/employees');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -43,6 +43,7 @@ export const employeeService = {
       }
       return this.getInitialEmployees();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Failed to fetch employees from Google Sheet, fallback to cache:', err);
       return this.getInitialEmployees();
     }

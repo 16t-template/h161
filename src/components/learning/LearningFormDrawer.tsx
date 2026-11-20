@@ -32,6 +32,7 @@ import { formatDate, toInputDateValue } from '../../utils/dateUtils';
 
 interface LearningFormDrawerProps {
   isOpen: boolean;
+  defaultDate?: string;
   onClose: () => void;
   onSave: (entry: LearningEntry) => void;
   initialEntry?: LearningEntry | null;
@@ -40,6 +41,7 @@ interface LearningFormDrawerProps {
 
 export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
   isOpen,
+  defaultDate,
   onClose,
   onSave,
   initialEntry,
@@ -136,7 +138,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
       setMasteryLevel('learning');
       setDifficulty('intermediate');
       setRating(5);
-      setEntryDate(toInputDateValue(new Date()));
+      setEntryDate(defaultDate ? toInputDateValue(defaultDate) : toInputDateValue(new Date()));
       setNextReviewDate('');
       setIsPinned(false);
       setColor('#8b5cf6');
@@ -144,7 +146,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
       setImages([]);
     }
     setEditorMode('write');
-  }, [initialEntry, isOpen]);
+  }, [initialEntry, isOpen, defaultDate]);
 
   // Upload image to Catbox
   const uploadImageFile = async (file: File): Promise<string> => {

@@ -39,7 +39,7 @@ export const cashTransactionService = {
     return localStorage.getItem(LAST_SYNC_KEY);
   },
 
-  async fetchFromSheet(): Promise<CashTransaction[]> {
+  async fetchFromSheet(strict = false): Promise<CashTransaction[]> {
     try {
       const res = await fetch('/api/sheets/transactions');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -51,6 +51,7 @@ export const cashTransactionService = {
       }
       throw new Error(data.error || 'Empty data returned');
     } catch (err) {
+      if (strict) throw err;
       console.warn('Failed to fetch transactions from Google Sheet, fallback to cache:', err);
       return this.getInitialTransactions();
     }

@@ -519,18 +519,17 @@ export const calendarService = {
   // TỰ ĐỘNG TẢI TRỰC TIẾP DỮ LIỆU TỪ TẤT CẢ CÁC PHÂN HỆ VÀ TỔNG HỢP LỊCH
   // ------------------------------------------------------------------
   async fetchAllAndAggregate(): Promise<CalendarEvent[]> {
-    try {
-      await Promise.allSettled([
-        noteService.fetchFromSheet().catch(() => noteService.getInitialNotes()),
-        cashTransactionService.fetchFromSheet().catch(() => cashTransactionService.getInitialTransactions()),
-        taskService.fetchFromSheet().catch(() => taskService.getInitialTasks()),
-        projectService.fetchFromSheet().catch(() => projectService.getInitialProjects()),
-        googleSheetsService.fetchFromSheet().catch(() => googleSheetsService.getInitialProposals()),
-        employeeService.fetchFromSheet().catch(() => employeeService.getInitialEmployees()),
-        learningService.fetchFromSheet().catch(() => learningService.getInitialEntries()),
-      ]);
-    } catch (e) {
-      console.warn('Error fetching all modules for calendar:', e);
+    const results = await Promise.allSettled([
+      noteService.fetchFromSheet(true),
+      cashTransactionService.fetchFromSheet(true),
+      taskService.fetchFromSheet(true),
+      projectService.fetchFromSheet(true),
+      googleSheetsService.fetchFromSheet(true),
+      employeeService.fetchFromSheet(true),
+      learningService.fetchFromSheet(true),
+    ]);
+    if (results.some((result) => result.status === 'rejected')) {
+      throw new Error('Chưa tải đủ dữ liệu từ Google Sheets. Nếu đang vượt hạn mức, hãy chờ khoảng 1 phút rồi bấm làm mới.');
     }
     return this.aggregateAllEvents();
   },

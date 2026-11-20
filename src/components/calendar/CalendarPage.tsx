@@ -20,6 +20,7 @@ import {
   Layers,
   CheckCircle2,
   GraduationCap,
+  X,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -34,9 +35,10 @@ import { CalendarDayView } from './CalendarDayView';
 import { CalendarAgendaView } from './CalendarAgendaView';
 import { CalendarStatsTab } from './CalendarStatsTab';
 import { EventDetailModal } from './EventDetailModal';
-import { EventFormModal } from './EventFormModal';
 import { generateId } from '../../utils/idGenerator';
-import { toLocalDateStr } from '../../utils/dateUtils';
+import { toLocalDateStr, formatDate } from '../../utils/dateUtils';
+import { getSafeAvatarUrl } from '../../utils/avatarUtils';
+import { useAuth } from '../../context/AuthContext';
 import { MobileAddButton } from '../common/MobileFormHelpers';
 
 import { NoteDetailDrawer } from '../notes/NoteDetailDrawer';
@@ -122,6 +124,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   // Modals & UI States
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Tự động tải trực tiếp dữ liệu từ các phân hệ khi vào trang Lịch biểu (khắc phục lỗi reload trang bị trống)
@@ -135,11 +138,16 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
       .then((freshEvents) => {
         if (isMounted) {
           setAllEvents(freshEvents);
+          setLoadError(null);
           setIsLoadingEvents(false);
         }
       })
-      .catch(() => {
-        if (isMounted) setIsLoadingEvents(false);
+      .catch((error: Error) => {
+        if (isMounted) {
+          setAllEvents(calendarService.aggregateAllEvents());
+          setLoadError(error.message);
+          setIsLoadingEvents(false);
+        }
       });
 
     return () => {
@@ -171,6 +179,8 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
 
   const [selectedCustomEvent, setSelectedCustomEvent] = useState<CalendarEvent | null>(null);
 
+  const { currentUser } = useAuth();
+
   // Module-specific edit form states
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -180,9 +190,10 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   const [editingProposal, setEditingProposal] = useState<CostProposal | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  // Active Creation Form Drawer
+  // Active Creation Form Drawer & Quick Date Choice Modal
   const [activeAddDrawer, setActiveAddDrawer] = useState<'note' | 'task' | 'learning' | 'cash' | null>(null);
   const [addDrawerDate, setAddDrawerDate] = useState<string>('');
+  const [dateChoiceModal, setDateChoiceModal] = useState<{ isOpen: boolean; dateStr: string } | null>(null);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -204,6 +215,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
     setSelectedProposal(null);
     setSelectedCustomEvent(null);
     setActiveAddDrawer(null);
+    setDateChoiceModal(null);
     setEditingNote(null);
     setEditingTask(null);
     setEditingProject(null);
@@ -213,35 +225,81 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
     setEditingEmployee(null);
   }, []);
 
-  // Handlers for saving edited items right from Calendar
+  // Handlers for saving items (Create & Edit) right from Calendar
   const handleSaveNote = async (formData: Partial<Note>) => {
-    if (!editingNote) return;
-    const matchId = editingNote.id;
-    const matchCode = editingNote.code;
     const currentList = noteService.getInitialNotes();
-    const updatedList = currentList.map((n) =>
-      n.id === matchId || (matchCode && n.code === matchCode)
-        ? ({ ...n, ...formData, code: matchCode || n.code, updatedAt: new Date().toISOString().split('T')[0] } as Note)
-        : n
-    );
-    setAllNotesList(updatedList);
-    noteService.saveToLocalCache(updatedList);
-    setEditingNote(null);
+    if (editingNote) {
+      const matchId = editingNote.id;
+      const matchCode = editingNote.code;
+      const updatedList = currentList.map((n) =>
+        n.id === matchId || (matchCode && n.code === matchCode)
+          ? ({ ...n, ...formData, code: matchCode || n.code, updatedAt: new Date().toISOString().split('T')[0] } as Note)
+          : n
+      );
+      setAllNotesList(updatedList);
+      noteService.saveToLocalCache(updatedList);
+      setEditingNote(null);
 
-    const target = updatedList.find((n) => n.id === matchId || (matchCode && n.code === matchCode));
-    if (target) {
-      noteService.updateInSheet(target).catch((e) => console.warn('Sync note update failed', e));
+      const target = updatedList.find((n) => n.id === matchId || (matchCode && n.code === matchCode));
+      if (target) {
+        noteService.updateInSheet(target).catch((e) => console.warn('Sync note update failed', e));
+      }
+      const fresh = calendarService.aggregateAllEvents();
+      setAllEvents(fresh);
+      showToast(`Đã cập nhật ghi chú "${formData.title || editingNote.title}"`);
+    } else {
+      const maxNum = currentList.reduce((max, n) => {
+        const m = (n.code || '').match(/NOTE-(\d+)/i);
+        return m ? Math.max(max, parseInt(m[1], 10)) : max;
+      }, 0);
+      const newCode = `NOTE-${String(maxNum + 1).padStart(3, '0')}`;
+
+      const newNote: Note = {
+        id: generateId('note'),
+        code: newCode,
+        title: formData.title || 'Ghi chú mới',
+        summary: formData.summary,
+        content: formData.content || '',
+        category: formData.category || 'Nhật ký & Hoạt động',
+        status: formData.status || 'published',
+        isPinned: formData.isPinned || false,
+        color: formData.color || 'blue',
+        coverUrl: formData.coverUrl,
+        images: formData.images || [],
+        noteDate: formData.noteDate || addDrawerDate || toLocalDateStr(currentDate),
+        noteTime: formData.noteTime,
+        location: formData.location,
+        coordinates: formData.coordinates,
+        activity: formData.activity || '',
+        participants: formData.participants || [],
+        tags: formData.tags || [],
+        attachments: formData.attachments || [],
+        author: formData.author || currentUser?.name || currentUser?.username || 'admin',
+        authorAvatar: getSafeAvatarUrl(
+          formData.authorAvatar || currentUser?.avatarUrl,
+          formData.author || currentUser?.name || currentUser?.username || 'admin'
+        ),
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+      const updatedList = [newNote, ...currentList];
+      setAllNotesList(updatedList);
+      noteService.saveToLocalCache(updatedList);
+      setActiveAddDrawer(null);
+      noteService.appendToSheet(newNote).catch((e) => console.warn('Sync append failed', e));
+      const fresh = calendarService.aggregateAllEvents();
+      setAllEvents(fresh);
+      showToast(`Đã thêm ghi chú "${newNote.title}"`);
     }
-    const fresh = calendarService.aggregateAllEvents();
-    setAllEvents(fresh);
-    showToast(`Đã cập nhật ghi chú "${formData.title || editingNote.title}"`);
   };
 
   const handleSaveTask = (taskPayload: Task) => {
     const currentTasks = taskService.getInitialTasks();
-    const isEdit = currentTasks.some(
-      (t) => (taskPayload.code && t.code === taskPayload.code) || t.id === taskPayload.id
-    );
+    const isEdit =
+      !!editingTask ||
+      currentTasks.some(
+        (t) => (taskPayload.code && t.code === taskPayload.code) || t.id === taskPayload.id
+      );
     let updated: Task[];
     if (isEdit) {
       updated = currentTasks.map((t) =>
@@ -253,12 +311,14 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
       updated = [taskPayload, ...currentTasks];
     }
     setAllTasksList(updated);
+    taskService.saveToCache(updated);
     taskService.saveAllToSheet(updated);
     setEditingTask(null);
+    setActiveAddDrawer(null);
 
     const fresh = calendarService.aggregateAllEvents();
     setAllEvents(fresh);
-    showToast(`Đã cập nhật công việc "${taskPayload.title}"`);
+    showToast(isEdit ? `Đã cập nhật công việc "${taskPayload.title}"` : `Đã thêm công việc "${taskPayload.title}"`);
   };
 
   const handleSaveProject = (projPayload: Project) => {
@@ -302,27 +362,69 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   };
 
   const handleSaveCashTx = async (formData: Partial<CashTransaction>) => {
-    if (!editingCashTx) return;
-    const updatedTx = {
-      ...editingCashTx,
-      ...formData,
-      updatedAt: new Date().toISOString().split('T')[0],
-    } as CashTransaction;
     const currentTxs = cashTransactionService.getInitialTransactions();
-    const updatedList = currentTxs.map((t) =>
-      t.id === editingCashTx.id || (editingCashTx.code && t.code === editingCashTx.code)
-        ? updatedTx
-        : t
-    );
-    setAllCashTxsList(updatedList);
-    cashTransactionService.saveToLocalCache(updatedList);
-    setEditingCashTx(null);
+    if (editingCashTx) {
+      const updatedTx = {
+        ...editingCashTx,
+        ...formData,
+        updatedAt: new Date().toISOString().split('T')[0],
+      } as CashTransaction;
+      const updatedList = currentTxs.map((t) =>
+        t.id === editingCashTx.id || (editingCashTx.code && t.code === editingCashTx.code)
+          ? updatedTx
+          : t
+      );
+      setAllCashTxsList(updatedList);
+      cashTransactionService.saveToLocalCache(updatedList);
+      setEditingCashTx(null);
 
-    cashTransactionService.updateTransaction(updatedTx).catch((e) => console.warn('Sync cash update failed', e));
+      cashTransactionService.updateTransaction(updatedTx).catch((e) => console.warn('Sync cash update failed', e));
 
-    const fresh = calendarService.aggregateAllEvents();
-    setAllEvents(fresh);
-    showToast(`Đã cập nhật phiếu thu chi "${updatedTx.code}"`);
+      const fresh = calendarService.aggregateAllEvents();
+      setAllEvents(fresh);
+      showToast(`Đã cập nhật phiếu thu chi "${updatedTx.code}"`);
+    } else {
+      const created: CashTransaction = {
+        id: generateId('tx'),
+        code: formData.code || `${formData.type === 'income' ? 'PT' : 'PC'}-${Date.now().toString().slice(-6)}`,
+        type: formData.type || 'expense',
+        title: formData.title || '',
+        amount: formData.amount || 0,
+        amountInWords: formData.amountInWords,
+        transactionDate: formData.transactionDate || addDrawerDate || toLocalDateStr(currentDate),
+        transactionTime: formData.transactionTime || '09:30',
+        category: formData.category || 'Chi phí khác',
+        subCategory: formData.subCategory,
+        account: formData.account || 'Vietcombank - Tài khoản chính',
+        destinationAccount: formData.destinationAccount,
+        paymentMethod: formData.paymentMethod || 'bank_transfer',
+        counterpartyType: formData.counterpartyType || 'vendor',
+        counterpartyName: formData.counterpartyName || 'Khách vãng lai',
+        counterpartyPhone: formData.counterpartyPhone,
+        counterpartyAddress: formData.counterpartyAddress,
+        department: formData.department,
+        refProposalCode: formData.refProposalCode,
+        invoiceNumber: formData.invoiceNumber,
+        reason: formData.reason || '',
+        note: formData.note,
+        status: formData.status || 'completed',
+        isPinned: formData.isPinned || false,
+        attachments: formData.attachments || [],
+        createdBy: formData.createdBy || currentUser?.name || 'Admin',
+        approvedBy: formData.approvedBy || currentUser?.name || 'Admin',
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+      const updatedList = [created, ...currentTxs];
+      setAllCashTxsList(updatedList);
+      cashTransactionService.saveToLocalCache(updatedList);
+      setActiveAddDrawer(null);
+      cashTransactionService.appendToSheet(created).catch((e: unknown) => console.warn('Sync cash create failed', e));
+
+      const fresh = calendarService.aggregateAllEvents();
+      setAllEvents(fresh);
+      showToast(`Đã tạo phiếu ${created.type === 'income' ? 'Thu' : 'Chi'} "${created.code}"`);
+    }
   };
 
   const handleSaveProposal = async (formData: Partial<CostProposal>) => {
@@ -354,23 +456,35 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   };
 
   const handleSaveLearning = (payload: LearningEntry) => {
-    if (!editingLearning) return;
     const currentEntries = learningService.getInitialEntries();
-    const matchCode = editingLearning.code || payload.code;
-    const matchId = editingLearning.id || payload.id;
-    const updatedList = currentEntries.map((e) =>
-      (e.code && e.code === matchCode) || e.id === matchId
-        ? { ...e, ...payload, sheetIndex: e.sheetIndex }
-        : e
-    );
+    const matchCode = editingLearning?.code || payload.code;
+    const matchId = editingLearning?.id || payload.id;
+    const isEdit = !!editingLearning || currentEntries.some((e) => (e.code && e.code === matchCode) || e.id === matchId);
+    let updatedList: LearningEntry[];
+    if (isEdit) {
+      updatedList = currentEntries.map((e) =>
+        (e.code && e.code === matchCode) || e.id === matchId
+          ? { ...e, ...payload, sheetIndex: e.sheetIndex }
+          : e
+      );
+      learningService.updateInSheet(payload).catch((e) => console.warn('Sync learning update failed', e));
+    } else {
+      const maxSheetIndex = currentEntries.reduce((max, e) => Math.max(max, e.sheetIndex ?? -1), -1);
+      const newEntry: LearningEntry = {
+        ...payload,
+        sheetIndex: maxSheetIndex + 1,
+      };
+      updatedList = [newEntry, ...currentEntries];
+      learningService.appendToSheet(newEntry).catch((e) => console.warn('Sync learning append failed', e));
+    }
     setAllLearningsList(updatedList);
     learningService.saveToCache(updatedList);
-    learningService.updateInSheet(payload).catch((e) => console.warn('Sync learning update failed', e));
     setEditingLearning(null);
+    setActiveAddDrawer(null);
 
     const fresh = calendarService.aggregateAllEvents();
     setAllEvents(fresh);
-    showToast(`Đã cập nhật bài học "${payload.title}"`);
+    showToast(isEdit ? `Đã cập nhật bài học "${payload.title}"` : `Đã lưu bài học "${payload.title}"`);
   };
 
   const openAddDrawer = useCallback((mod: 'note' | 'task' | 'learning' | 'cash', dateStr?: string) => {
@@ -577,21 +691,15 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
     try {
       const fresh = await calendarService.fetchAllAndAggregate();
       setAllEvents(fresh);
+      setLoadError(null);
       showToast(`Đã đồng bộ và làm mới (${fresh.length} sự kiện từ toàn bộ hệ thống)`);
-    } catch {
+    } catch (error) {
       const fresh = calendarService.aggregateAllEvents();
       setAllEvents(fresh);
-      showToast(`Đã làm mới dữ liệu (${fresh.length} sự kiện)`);
+      setLoadError(error instanceof Error ? error.message : 'Không tải được dữ liệu Google Sheets.');
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  const handleSaveCustomEvent = (newEvent: CalendarEvent) => {
-    calendarService.addCustomEvent(newEvent);
-    const fresh = calendarService.aggregateAllEvents();
-    setAllEvents(fresh);
-    showToast(`Đã lưu sự kiện "${newEvent.title}"`);
   };
 
   const handleDeleteCustomEvent = (id: string) => {
@@ -714,6 +822,11 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col p-1.5 md:p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      {loadError && (
+        <div role="alert" className="mb-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {loadError} Lịch có thể chưa đầy đủ.
+        </div>
+      )}
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-foreground text-background text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200">
@@ -971,7 +1084,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                     <div className="inline-flex rounded-lg shadow-sm">
                       <button
                         type="button"
-                        onClick={() => openAddDrawer('note')}
+                        onClick={() => setDateChoiceModal({ isOpen: true, dateStr: toLocalDateStr(currentDate) })}
                         className="h-8 px-2.5 rounded-l-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1069,7 +1182,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       month={currentMonth}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
+                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
                       onSelectDate={(date) => {
                         setCurrentDate(date);
                         setViewMode('day');
@@ -1083,7 +1196,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       currentDate={currentDate}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
+                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
                       onSelectDate={(date) => {
                         setCurrentDate(date);
                         setViewMode('day');
@@ -1097,7 +1210,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       currentDate={currentDate}
                       events={filteredEvents}
                       onSelectEvent={handleSelectEvent}
-                      onAddEventForDate={(dateStr) => openAddDrawer('note', dateStr)}
+                      onAddEventForDate={(dateStr) => setDateChoiceModal({ isOpen: true, dateStr })}
                       onMoveEvent={handleMoveEvent}
                     />
                   )}
@@ -1128,7 +1241,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         </div>
       </div>
 
-      <MobileAddButton label="Thêm ghi chú" onClick={() => openAddDrawer('note')} />
+      <MobileAddButton label="Thêm mới" onClick={() => setDateChoiceModal({ isOpen: true, dateStr: toLocalDateStr(currentDate) })} />
 
       {/* Module Detail Drawers */}
       {selectedNote && (
@@ -1394,35 +1507,161 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onDeleteCustomEvent={handleDeleteCustomEvent}
       />
 
-      <EventFormModal
-        isOpen={activeAddDrawer !== null}
-        defaultDate={addDrawerDate}
-        defaultModule={activeAddDrawer || 'note'}
-        onClose={() => setActiveAddDrawer(null)}
-        onSave={handleSaveCustomEvent}
-        onSaveSuccess={(msg) => {
-          const fresh = calendarService.aggregateAllEvents();
-          setAllEvents(fresh);
-          showToast(`✅ ${msg}`);
-        }}
-        onSyncFailed={(msg) => showToast(`⚠️ ${msg}`)}
-      />
+      {/* Date Choice Modal */}
+      {dateChoiceModal?.isOpen && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity"
+            onClick={() => setDateChoiceModal(null)}
+          />
 
-      {/* Module Edit Form Drawers right in Calendar */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div
+              className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl p-5 sm:p-6 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-border/60">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                    <CalendarIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Thêm mới vào Lịch biểu</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Ngày đã chọn: <span className="font-semibold text-primary">{formatDate(dateChoiceModal.dateStr)}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDateChoiceModal(null)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* 4 Choices */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const date = dateChoiceModal.dateStr;
+                    setDateChoiceModal(null);
+                    openAddDrawer('note', date);
+                  }}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-purple-500/50 hover:bg-purple-500/5 transition-all text-left group"
+                >
+                  <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform shrink-0">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                      Ghi chú
+                    </div>
+                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                      Ghi chép công việc, biên bản họp, nhật ký
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const date = dateChoiceModal.dateStr;
+                    setDateChoiceModal(null);
+                    openAddDrawer('task', date);
+                  }}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-left group"
+                >
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform shrink-0">
+                    <CheckSquare className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      Công việc
+                    </div>
+                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                      Phân công nhiệm vụ, đặt hạn chót (Deadline)
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const date = dateChoiceModal.dateStr;
+                    setDateChoiceModal(null);
+                    openAddDrawer('learning', date);
+                  }}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all text-left group"
+                >
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                      Học hỏi
+                    </div>
+                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                      Kiến thức, tài liệu học tập, chia sẻ kinh nghiệm
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const date = dateChoiceModal.dateStr;
+                    setDateChoiceModal(null);
+                    openAddDrawer('cash', date);
+                  }}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-left group"
+                >
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                      Thu / Chi
+                    </div>
+                    <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                      Phiếu thu tiền hoặc phiếu chi tài chính
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Note Form Drawer (Create & Edit - Using standard NoteFormDrawer) */}
       <NoteFormDrawer
-        isOpen={!!editingNote}
+        isOpen={activeAddDrawer === 'note' || !!editingNote}
         initialData={editingNote}
+        defaultDate={editingNote ? undefined : addDrawerDate}
         existingTags={Array.from(new Set(allNotesList.flatMap((n) => n.tags || [])))}
-        onClose={() => setEditingNote(null)}
+        onClose={() => {
+          setActiveAddDrawer(null);
+          setEditingNote(null);
+        }}
         onSubmit={handleSaveNote}
       />
 
-      {editingTask && (
+      {/* 2. Task Form Drawer (Create & Edit - Using standard TaskFormDrawer) */}
+      {(activeAddDrawer === 'task' || !!editingTask) && (
         <TaskFormDrawer
-          mode="edit"
+          mode={editingTask ? 'edit' : 'create'}
           task={editingTask}
+          defaultDate={editingTask ? undefined : addDrawerDate}
           allTasks={allTasksList.length > 0 ? allTasksList : taskService.getInitialTasks()}
-          onClose={() => setEditingTask(null)}
+          onClose={() => {
+            setActiveAddDrawer(null);
+            setEditingTask(null);
+          }}
           onSave={handleSaveTask}
         />
       )}
@@ -1444,11 +1683,16 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onSubmit={handleSaveEmployee}
       />
 
+      {/* 3. Cash Transaction Form Drawer (Create & Edit - Using standard CashTransactionFormDrawer) */}
       <CashTransactionFormDrawer
-        isOpen={!!editingCashTx}
+        isOpen={activeAddDrawer === 'cash' || !!editingCashTx}
         transactionToEdit={editingCashTx}
         initialType={editingCashTx?.type || 'expense'}
-        onClose={() => setEditingCashTx(null)}
+        defaultDate={editingCashTx ? undefined : addDrawerDate}
+        onClose={() => {
+          setActiveAddDrawer(null);
+          setEditingCashTx(null);
+        }}
         onSave={handleSaveCashTx}
         onNavigateToModule={onNavigate}
       />
@@ -1460,11 +1704,16 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onSubmit={handleSaveProposal}
       />
 
+      {/* 4. Learning Form Drawer (Create & Edit - Using standard LearningFormDrawer) */}
       <LearningFormDrawer
-        isOpen={!!editingLearning}
+        isOpen={activeAddDrawer === 'learning' || !!editingLearning}
         initialEntry={editingLearning}
+        defaultDate={editingLearning ? undefined : addDrawerDate}
         allEntries={allLearningsList.length > 0 ? allLearningsList : learningService.getInitialEntries()}
-        onClose={() => setEditingLearning(null)}
+        onClose={() => {
+          setActiveAddDrawer(null);
+          setEditingLearning(null);
+        }}
         onSave={handleSaveLearning}
       />
     </div>

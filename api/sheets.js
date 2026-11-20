@@ -792,6 +792,7 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Endpoint not found: ' + action });
   } catch (err) {
     console.error('Sheets API error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    if (err.status === 429) res.setHeader('Retry-After', '60');
+    return res.status(err.status === 429 ? 429 : 500).json({ success: false, error: err.message });
   }
 }

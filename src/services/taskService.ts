@@ -44,7 +44,7 @@ export const taskService = {
     return localStorage.getItem(TASKS_LAST_SYNC_KEY);
   },
 
-  async fetchFromSheet(): Promise<Task[]> {
+  async fetchFromSheet(strict = false): Promise<Task[]> {
     try {
       const res = await fetch('/api/sheets/tasks');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -56,6 +56,7 @@ export const taskService = {
       }
       return this.getInitialTasks();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Fallback to local tasks cache:', err);
       return this.getInitialTasks();
     }
@@ -154,7 +155,7 @@ export const projectService = {
     }
   },
 
-  async fetchFromSheet(): Promise<Project[]> {
+  async fetchFromSheet(strict = false): Promise<Project[]> {
     try {
       const res = await fetch('/api/sheets/projects');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -165,6 +166,7 @@ export const projectService = {
       }
       return this.getInitialProjects();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Fallback to local projects cache:', err);
       return this.getInitialProjects();
     }
@@ -261,7 +263,7 @@ export const workflowService = {
     }
   },
 
-  async fetchFromSheet(): Promise<WorkflowTemplate[]> {
+  async fetchFromSheet(strict = false): Promise<WorkflowTemplate[]> {
     try {
       const res = await fetch('/api/sheets/workflows');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -272,6 +274,7 @@ export const workflowService = {
       }
       return this.getInitialWorkflows();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Fallback to local workflows cache:', err);
       return this.getInitialWorkflows();
     }

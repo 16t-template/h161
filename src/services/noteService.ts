@@ -45,7 +45,7 @@ export const noteService = {
     return localStorage.getItem(LAST_SYNC_KEY);
   },
 
-  async fetchFromSheet(): Promise<Note[]> {
+  async fetchFromSheet(strict = false): Promise<Note[]> {
     try {
       const res = await fetch('/api/sheets/notes');
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -57,6 +57,7 @@ export const noteService = {
       }
       return this.getInitialNotes();
     } catch (err) {
+      if (strict) throw err;
       console.warn('Failed to fetch notes from Google Sheet, fallback to cache:', err);
       return this.getInitialNotes();
     }
