@@ -15,6 +15,7 @@ import {
   ListChecks,
   Undo2,
   AlertTriangle,
+  Calendar,
 } from 'lucide-react';
 import { Task, TaskPriority, TaskStatus, TaskSubtask, Project } from '../../../types/task';
 import { Employee } from '../../../types/employee';
@@ -694,6 +695,38 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   className="w-full p-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
                 />
               </div>
+
+              {/* Ngày bắt đầu & Hạn chót (Deadline) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-sky-500" />
+                    <span>Ngày bắt đầu</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Hạn chót (Deadline) <span className="text-rose-500">*</span></span>
+                  </label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className={`w-full h-9 px-3 rounded-lg border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary ${
+                      errors.dueDate ? 'border-rose-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.dueDate && <p className="text-[11px] text-rose-500">{errors.dueDate}</p>}
+                </div>
+              </div>
             </div>
 
             {/* 2. Dự án, Người giao việc & Người thực hiện chính */}
@@ -832,52 +865,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               </div>
             </div>
 
-            {/* 4. Status, Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Trạng thái</label>
-                <select
-                  value={status}
-                  onChange={(e) => {
-                    const st = e.target.value as TaskStatus;
-                    setStatus(st);
-                    if (st === 'completed') setProgress(100);
-                  }}
-                  className="w-full h-9 px-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="todo">Chưa thực hiện</option>
-                  <option value="in_progress">Đang thực hiện</option>
-                  <option value="completed">Đã hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Ngày bắt đầu</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full h-9 px-2 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">
-                  Hạn chót (Deadline) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className={`w-full h-9 px-2 rounded-lg border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary ${
-                    errors.dueDate ? 'border-rose-500' : 'border-border'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* 6. Subtasks Checklist Builder */}
+            {/* 3. Subtasks Checklist Builder */}
             <div id="task-subtasks-section" className="space-y-3 p-3.5 rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -993,15 +981,35 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Ghi chú bổ sung</label>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Ghi chú nội bộ hoặc yêu cầu nghiệm thu..."
-                  className="w-full h-9 px-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-xs font-semibold text-foreground">Ghi chú bổ sung</label>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Ghi chú nội bộ hoặc yêu cầu nghiệm thu..."
+                    className="w-full h-9 px-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground">Trạng thái</label>
+                  <select
+                    value={status}
+                    onChange={(e) => {
+                      const st = e.target.value as TaskStatus;
+                      setStatus(st);
+                      if (st === 'completed') setProgress(100);
+                    }}
+                    className="w-full h-9 px-3 rounded-lg border border-border bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                  >
+                    <option value="todo">Chưa thực hiện</option>
+                    <option value="in_progress">Đang thực hiện</option>
+                    <option value="completed">Đã hoàn thành</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
               </div>
             </div>
           </form>
