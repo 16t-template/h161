@@ -14,6 +14,7 @@ import {
   Minimize2,
   ListChecks,
   Undo2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Task, TaskPriority, TaskStatus, TaskSubtask, Project } from '../../../types/task';
 import { Employee } from '../../../types/employee';
@@ -136,6 +137,8 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
   const isInitializedRef = useRef(false);
   const prevEditIdRef = useRef<string | null | undefined>(undefined);
+  const initialValuesRef = useRef<any>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   useEffect(() => {
     const currentEditId = mode === 'edit' && task ? (task.id || task.code) : null;
@@ -176,6 +179,19 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       setSubtasks(task.subtasks || []);
       setTags(task.tags || []);
       setNote(task.note || '');
+      initialValuesRef.current = {
+        title: task.title || '',
+        description: task.description || '',
+        projectId: task.projectId || '',
+        assigneeId: task.assigneeId || task.assigneeCode || task.assigneeName || '',
+        priority: task.priority || 'medium',
+        status: task.status || 'todo',
+        startDate: task.startDate || today,
+        dueDate: task.dueDate || nextWeek,
+        subtasks: task.subtasks || [],
+        tags: task.tags || [],
+        note: task.note || '',
+      };
     } else {
       const tasksToScan = allTasks.length > 0 ? allTasks : taskService.getInitialTasks();
       let maxNum = 0;
@@ -216,8 +232,46 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       setSubtasks([]);
       setTags(['Công việc']);
       setNote('');
+      initialValuesRef.current = null;
     }
   }, [mode, task, allTasks, defaultStatus, defaultDate, employees, departmentsList, currentUser]);
+
+  const isDirty = useMemo(() => {
+    if (mode === 'create') {
+      return Boolean(
+        title.trim() !== '' ||
+        description.trim() !== '' ||
+        assigneeId !== '' ||
+        projectId !== '' ||
+        subtasks.length > 0 ||
+        note.trim() !== '' ||
+        (tags.length > 0 && !(tags.length === 1 && tags[0] === 'Công việc'))
+      );
+    }
+    if (!initialValuesRef.current) return false;
+    const init = initialValuesRef.current;
+    return (
+      title !== init.title ||
+      description !== init.description ||
+      projectId !== init.projectId ||
+      assigneeId !== init.assigneeId ||
+      status !== init.status ||
+      priority !== init.priority ||
+      startDate !== init.startDate ||
+      dueDate !== init.dueDate ||
+      note !== init.note ||
+      JSON.stringify(subtasks) !== JSON.stringify(init.subtasks) ||
+      JSON.stringify(tags) !== JSON.stringify(init.tags)
+    );
+  }, [mode, title, description, assigneeId, projectId, subtasks, note, tags, status, priority, startDate, dueDate]);
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
 
   // Subtasks handler
   const handleAddSubtask = () => {
@@ -434,7 +488,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={handleRequestClose}
       />
 
       {/* Main Drawer Container */}
@@ -541,7 +595,7 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               aria-label="Đóng"
               title="Đóng"
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
@@ -951,13 +1005,13 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           >
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
             >
               Hủy
             </button>
             <button
-              type="button"
+              type="submit"
               onClick={handleSubmit}
               className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
             >
@@ -966,6 +1020,47 @@ export const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             </button>
           </div>
       </div>
+
+      {/* Unsaved changes confirmation dialog */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-150 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-foreground">Bạn có thay đổi chưa lưu</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Các thông tin vừa nhập hoặc chỉnh sửa sẽ bị mất nếu bạn đóng cửa sổ này. Bạn có chắc chắn muốn thoát không?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3.5 py-2 rounded-lg border border-input bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Đóng và hủy thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

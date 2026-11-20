@@ -25,6 +25,7 @@ import {
   Wallet,
   Users,
   Plus,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   CashTransaction,
@@ -268,6 +269,8 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
 
   const prevIsOpenRef = useRef(false);
   const prevEditIdRef = useRef<string | null | undefined>(undefined);
+  const initialValuesRef = useRef<any>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -352,6 +355,31 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
       setStatus(transactionToEdit.status);
       setIsPinned(transactionToEdit.isPinned || false);
       setAttachments(transactionToEdit.attachments || []);
+      initialValuesRef.current = {
+        type: transactionToEdit.type,
+        title: transactionToEdit.title || '',
+        amount: transactionToEdit.amount || 0,
+        transactionDate: transactionToEdit.transactionDate || '',
+        transactionTime: transactionToEdit.transactionTime || '',
+        category: transactionToEdit.category || '',
+        subCategory: transactionToEdit.subCategory || '',
+        account: transactionToEdit.account || '',
+        destinationAccount: transactionToEdit.destinationAccount || '',
+        paymentMethod: transactionToEdit.paymentMethod || 'bank_transfer',
+        counterpartyName: transactionToEdit.counterpartyName || '',
+        counterpartyType: transactionToEdit.counterpartyType || 'vendor',
+        counterpartyPhone: transactionToEdit.counterpartyPhone || '',
+        counterpartyAddress: transactionToEdit.counterpartyAddress || '',
+        selectedCounterpartyId: matchedCpId,
+        department: transactionToEdit.department || 'Ban Giám Đốc',
+        refProposalCode: transactionToEdit.refProposalCode || '',
+        invoiceNumber: transactionToEdit.invoiceNumber || '',
+        reason: transactionToEdit.reason || '',
+        note: transactionToEdit.note || '',
+        status: transactionToEdit.status,
+        isPinned: transactionToEdit.isPinned || false,
+        attachments: transactionToEdit.attachments || [],
+      };
     } else {
       const newType = initialType;
       setType(newType);
@@ -398,9 +426,81 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
       setStatus('completed');
       setIsPinned(false);
       setAttachments([]);
+      initialValuesRef.current = null;
     }
     setFormErrors({});
   }, [transactionToEdit, initialType, defaultDate, isOpen, masterCounterparties, employees]);
+
+  const isDirty = useMemo(() => {
+    if (!isEdit) {
+      return Boolean(
+        amount > 0 ||
+        title.trim() !== '' ||
+        reason.trim() !== '' ||
+        note.trim() !== '' ||
+        counterpartyName.trim() !== '' ||
+        invoiceNumber.trim() !== '' ||
+        refProposalCode.trim() !== '' ||
+        selectedCounterpartyId !== '' ||
+        attachments.length > 0 ||
+        isPinned
+      );
+    }
+    if (!initialValuesRef.current) return false;
+    const init = initialValuesRef.current;
+    return (
+      type !== init.type ||
+      title !== init.title ||
+      amount !== init.amount ||
+      transactionDate !== init.transactionDate ||
+      transactionTime !== init.transactionTime ||
+      category !== init.category ||
+      subCategory !== init.subCategory ||
+      account !== init.account ||
+      destinationAccount !== init.destinationAccount ||
+      paymentMethod !== init.paymentMethod ||
+      counterpartyName !== init.counterpartyName ||
+      selectedCounterpartyId !== init.selectedCounterpartyId ||
+      department !== init.department ||
+      refProposalCode !== init.refProposalCode ||
+      invoiceNumber !== init.invoiceNumber ||
+      reason !== init.reason ||
+      note !== init.note ||
+      status !== init.status ||
+      isPinned !== init.isPinned ||
+      JSON.stringify(attachments) !== JSON.stringify(init.attachments)
+    );
+  }, [
+    isEdit,
+    type,
+    title,
+    amount,
+    transactionDate,
+    transactionTime,
+    category,
+    subCategory,
+    account,
+    destinationAccount,
+    paymentMethod,
+    counterpartyName,
+    selectedCounterpartyId,
+    department,
+    refProposalCode,
+    invoiceNumber,
+    reason,
+    note,
+    status,
+    isPinned,
+    attachments,
+  ]);
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
 
   const handleAmountChange = (val: number) => {
     const validAmount = isNaN(val) || val < 0 ? 0 : val;
@@ -629,7 +729,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={handleRequestClose}
       />
 
       {/* Main Drawer Container */}
@@ -744,7 +844,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               aria-label="Đóng"
               title="Đóng"
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
@@ -1408,7 +1508,7 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleRequestClose}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
           >
             Hủy
@@ -1433,6 +1533,47 @@ export const CashTransactionFormDrawer: React.FC<CashTransactionFormDrawerProps>
           </button>
         </div>
       </div>
+
+      {/* Unsaved changes confirmation dialog */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-150 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-foreground">Bạn có thay đổi chưa lưu</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Các thông tin vừa nhập hoặc chỉnh sửa sẽ bị mất nếu bạn đóng cửa sổ này. Bạn có chắc chắn muốn thoát không?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3.5 py-2 rounded-lg border border-input bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Đóng và hủy thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

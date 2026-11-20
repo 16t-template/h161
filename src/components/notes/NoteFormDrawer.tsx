@@ -93,6 +93,8 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const initialValuesRef = useRef<any>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -277,6 +279,26 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 
       setParticipants(initialData.participants || []);
       setActivity(initialData.activity || '');
+      initialValuesRef.current = {
+        title: initialData.title || '',
+        summary: initialData.summary || '',
+        link: initialData.link || '',
+        content: initialData.content || '',
+        category: initialData.category || '',
+        status: initialData.status || 'published',
+        isPinned: !!initialData.isPinned,
+        color: initialData.color || 'blue',
+        icons: initialData.icons || [],
+        coverUrl: initialData.coverUrl || '',
+        noteDate: toInputDateValue(initialData.noteDate) || '',
+        noteTime: initialData.noteTime || '',
+        location: initialData.location || '',
+        tags: initialData.tags || [],
+        images: initialData.images || [],
+        attachments: initialData.attachments || [],
+        participants: initialData.participants || [],
+        activity: initialData.activity || '',
+      };
     } else {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -349,10 +371,80 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
           { enableHighAccuracy: true, timeout: 8000 }
         );
       }
+      initialValuesRef.current = null;
     }
     setFormErrors({});
     setContentTab('edit');
   }, [initialData, isOpen]);
+
+  const isDirty = useMemo(() => {
+    if (!isEdit) {
+      return Boolean(
+        title.trim() !== '' ||
+        content.trim() !== '' ||
+        summary.trim() !== '' ||
+        link.trim() !== '' ||
+        tags.length > 0 ||
+        images.length > 0 ||
+        attachments.length > 0 ||
+        coverUrl !== '' ||
+        participants.length > 0 ||
+        activity.trim() !== '' ||
+        isPinned ||
+        icons.length > 0
+      );
+    }
+    if (!initialValuesRef.current) return false;
+    const init = initialValuesRef.current;
+    return (
+      title !== init.title ||
+      content !== init.content ||
+      summary !== init.summary ||
+      link !== init.link ||
+      category !== init.category ||
+      status !== init.status ||
+      isPinned !== init.isPinned ||
+      color !== init.color ||
+      coverUrl !== init.coverUrl ||
+      noteDate !== init.noteDate ||
+      noteTime !== init.noteTime ||
+      location !== init.location ||
+      activity !== init.activity ||
+      JSON.stringify(tags) !== JSON.stringify(init.tags) ||
+      JSON.stringify(images) !== JSON.stringify(init.images) ||
+      JSON.stringify(icons) !== JSON.stringify(init.icons) ||
+      JSON.stringify(attachments) !== JSON.stringify(init.attachments) ||
+      JSON.stringify(participants) !== JSON.stringify(init.participants)
+    );
+  }, [
+    isEdit,
+    title,
+    content,
+    summary,
+    link,
+    category,
+    status,
+    isPinned,
+    color,
+    coverUrl,
+    noteDate,
+    noteTime,
+    location,
+    activity,
+    tags,
+    images,
+    icons,
+    attachments,
+    participants,
+  ]);
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
 
   const getWidthStyle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
@@ -718,7 +810,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={handleRequestClose}
       />
 
       {/* Drawer Container */}
@@ -828,7 +920,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               aria-label="Đóng"
               title="Đóng"
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
@@ -1826,7 +1918,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleRequestClose}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
           >
             Hủy
@@ -1841,6 +1933,47 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Unsaved changes confirmation dialog */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-150 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-foreground">Bạn có thay đổi chưa lưu</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Các thông tin vừa nhập hoặc chỉnh sửa sẽ bị mất nếu bạn đóng cửa sổ này. Bạn có chắc chắn muốn thoát không?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3.5 py-2 rounded-lg border border-input bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Đóng và hủy thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Location Picker Modal */}
       <LocationPickerModal

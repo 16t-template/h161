@@ -18,6 +18,7 @@ import {
   PanelRightOpen,
   Maximize2,
   Minimize2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   LearningEntry,
@@ -116,6 +117,8 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
 
   const prevIsOpenRef = useRef(false);
   const prevEditIdRef = useRef<string | null | undefined>(undefined);
+  const initialValuesRef = useRef<any>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   // Initialize or reset form
   useEffect(() => {
@@ -155,6 +158,24 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
       setColor(initialEntry.color || '#8b5cf6');
       setCoverUrl(initialEntry.coverUrl || '');
       setImages(initialEntry.images || []);
+      initialValuesRef.current = {
+        title: initialEntry.title || '',
+        summary: initialEntry.summary || '',
+        content: initialEntry.content || '',
+        tags: initialEntry.tags || [],
+        sourceType: initialEntry.sourceType || 'Khóa học',
+        sourceName: initialEntry.sourceName || '',
+        sourceUrl: initialEntry.sourceUrl || '',
+        links: initialEntry.links || [],
+        masteryLevel: initialEntry.masteryLevel || 'learning',
+        difficulty: initialEntry.difficulty || 'intermediate',
+        rating: initialEntry.rating ?? 5,
+        entryDate: toInputDateValue(initialEntry.entryDate) || toInputDateValue(new Date()),
+        nextReviewDate: toInputDateValue(initialEntry.nextReviewDate),
+        isPinned: initialEntry.isPinned || false,
+        coverUrl: initialEntry.coverUrl || '',
+        images: initialEntry.images || [],
+      };
     } else {
       setTitle('');
       setSummary('');
@@ -177,9 +198,74 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
       setColor('#8b5cf6');
       setCoverUrl('');
       setImages([]);
+      initialValuesRef.current = null;
     }
     setEditorMode('write');
   }, [initialEntry, isOpen, defaultDate]);
+
+  const isDirty = useMemo(() => {
+    if (!isEditing) {
+      return Boolean(
+        title.trim() !== '' ||
+        summary.trim() !== '' ||
+        content.trim() !== '' ||
+        tags.length > 0 ||
+        sourceName.trim() !== '' ||
+        sourceUrl.trim() !== '' ||
+        links.length > 0 ||
+        images.length > 0 ||
+        coverUrl !== '' ||
+        isPinned ||
+        nextReviewDate !== ''
+      );
+    }
+    if (!initialValuesRef.current) return false;
+    const init = initialValuesRef.current;
+    return (
+      title !== init.title ||
+      summary !== init.summary ||
+      content !== init.content ||
+      sourceType !== init.sourceType ||
+      sourceName !== init.sourceName ||
+      sourceUrl !== init.sourceUrl ||
+      masteryLevel !== init.masteryLevel ||
+      difficulty !== init.difficulty ||
+      rating !== init.rating ||
+      entryDate !== init.entryDate ||
+      nextReviewDate !== init.nextReviewDate ||
+      isPinned !== init.isPinned ||
+      coverUrl !== init.coverUrl ||
+      JSON.stringify(tags) !== JSON.stringify(init.tags) ||
+      JSON.stringify(links) !== JSON.stringify(init.links) ||
+      JSON.stringify(images) !== JSON.stringify(init.images)
+    );
+  }, [
+    isEditing,
+    title,
+    summary,
+    content,
+    sourceType,
+    sourceName,
+    sourceUrl,
+    masteryLevel,
+    difficulty,
+    rating,
+    entryDate,
+    nextReviewDate,
+    isPinned,
+    coverUrl,
+    tags,
+    links,
+    images,
+  ]);
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
 
   // Upload image to Catbox
   const uploadImageFile = async (file: File): Promise<string> => {
@@ -456,7 +542,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={handleRequestClose}
       />
 
       {/* Main Drawer Container */}
@@ -563,7 +649,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               aria-label="Đóng"
               title="Đóng"
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95 shrink-0"
@@ -1212,7 +1298,7 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
           >
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-9 px-4 text-xs border border-input bg-background hover:bg-muted text-foreground cursor-pointer active:scale-95"
             >
               Hủy
@@ -1228,6 +1314,47 @@ export const LearningFormDrawer: React.FC<LearningFormDrawerProps> = ({
             </button>
           </div>
       </div>
+
+      {/* Unsaved changes confirmation dialog */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-150 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-foreground">Bạn có thay đổi chưa lưu</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Các thông tin vừa nhập hoặc chỉnh sửa sẽ bị mất nếu bạn đóng cửa sổ này. Bạn có chắc chắn muốn thoát không?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3.5 py-2 rounded-lg border border-input bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Đóng và hủy thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
