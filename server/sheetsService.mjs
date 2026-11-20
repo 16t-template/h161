@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
+import { webcrypto } from 'node:crypto';
 
 const SPREADSHEET_ID = '1Cx_84szeCGKoLhCSqumeCzKLCErXg1YStQeI_Lrq4nw';
 const SERVICE_ACCOUNT_PATH = path.resolve(process.cwd(), 'service-account.json');
@@ -110,9 +110,20 @@ export async function getAccessToken() {
   const encodedClaim = Buffer.from(JSON.stringify(claim)).toString('base64url');
   const signInput = `${encodedHeader}.${encodedClaim}`;
 
-  const sign = crypto.createSign('RSA-SHA256');
-  sign.update(signInput);
-  const signature = sign.sign(serviceAccount.private_key, 'base64url');
+  // Workers can use a JWK exported from the same Google service-account key.
+  const keyBase64 = serviceAccount.private_key
+    ?.replace(/\\n/g, '\n')
+    .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, '');
+  const signingKey = await webcrypto.subtle.importKey(
+    serviceAccount.private_key_jwk ? 'jwk' : 'pkcs8',
+    serviceAccount.private_key_jwk || Buffer.from(keyBase64, 'base64'),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = Buffer.from(await webcrypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5', signingKey, new TextEncoder().encode(signInput),
+  )).toString('base64url');
 
   const jwt = `${signInput}.${signature}`;
 

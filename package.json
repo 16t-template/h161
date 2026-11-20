@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "preview:cloudflare": "wrangler dev",
+    "secret:cloudflare": "node scripts/set-cloudflare-secret.mjs",
     "deploy:cloudflare": "npm run build && wrangler deploy",
     "sheet:push": "node ./scripts/sync-to-sheet.mjs",
     "sheet:pull": "node ./scripts/sync-from-sheet.mjs"

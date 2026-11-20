@@ -48,10 +48,11 @@ vào `worker/index.js`. Không chỉ upload thư mục `dist`: cách đó thiế
 1. Kết nối repository chứa các thay đổi này, đặt thư mục gốc là thư mục có `package.json`.
 2. Build command: `npm run build`.
 3. Deploy command: `npx wrangler deploy` (không dùng lệnh chỉ upload assets).
-4. Trong Settings → Variables and Secrets, thêm **Secret** tên
-   `GOOGLE_SERVICE_ACCOUNT`, giá trị là toàn bộ nội dung JSON trong file
-   `service-account.json` ở máy bạn. Đây là secret phía server, không thêm tiền tố
-   `VITE_` và không commit file khóa lên Git.
+4. Chạy `npx wrangler login`, chọn đúng tài khoản Cloudflare, rồi chạy
+   `npm run secret:cloudflare` ở máy có file `service-account.json`.
+   Lệnh chuyển cùng khóa RSA sang JWK để Workers đọc được và tải lên secret
+   `GOOGLE_SERVICE_ACCOUNT` của Worker `h161`, không in khóa ra màn hình.
+   Đây là secret phía server, không thêm tiền tố `VITE_` và không commit file khóa lên Git.
 5. Triển khai lại Worker. Tài khoản dịch vụ phải có quyền truy cập Google Sheet.
 
 ### Chạy thử và triển khai bằng CLI
@@ -61,18 +62,16 @@ npm run build
 npm run preview:cloudflare
 ```
 
-Để thử kết nối Google Sheets cục bộ, tạo `.dev.vars` (đã được Git bỏ qua):
-
-```dotenv
-GOOGLE_SERVICE_ACCOUNT='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","token_uri":"https://oauth2.googleapis.com/token"}'
-```
-
-Dùng thông tin thật từ file khóa của bạn; không đưa secret vào `wrangler.jsonc`.
+Lệnh preview kiểm tra định tuyến và giao diện. Để thử Google Sheets với file
+`service-account.json` cục bộ, dùng `npm run dev`. Nếu thử bằng Workers local,
+secret trong `.dev.vars` cần thêm `private_key_jwk` xuất từ cùng khóa RSA;
+khóa PEM được Node.js chấp nhận vẫn có thể bị Workers từ chối.
+Không đưa secret vào `wrangler.jsonc`.
 Đăng nhập đúng tài khoản Cloudflare rồi triển khai:
 
 ```bash
 npx wrangler login
-npx wrangler secret put GOOGLE_SERVICE_ACCOUNT
+npm run secret:cloudflare
 npm run deploy:cloudflare
 ```
 
