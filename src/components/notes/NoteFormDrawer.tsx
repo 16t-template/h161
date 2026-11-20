@@ -85,7 +85,6 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
   const [link, setLink] = useState('');
   const [content, setContent] = useState('');
   const [contentTab, setContentTab] = useState<'edit' | 'preview'>('edit');
-  const [activeTab, setActiveTab] = useState<'content' | 'images' | 'location' | 'icons'>('content');
 
   const [category, setCategory] = useState<NoteCategory | ''>('');
   const [status, setStatus] = useState<NoteStatus>('published');
@@ -236,7 +235,6 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
 
     prevIsOpenRef.current = true;
     prevEditIdRef.current = currentEditId;
-    setActiveTab('content');
 
     if (initialData) {
       setTitle(initialData.title || '');
@@ -668,7 +666,6 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      setActiveTab('content');
       return;
     }
 
@@ -804,78 +801,6 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
           </div>
         </div>
 
-        {/* Tab Navigation Strip */}
-        <div className="flex items-center gap-1 px-3 sm:px-5 py-1.5 border-b border-border bg-muted/20 shrink-0 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab('content')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
-              activeTab === 'content'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>Nội dung chính</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('images')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
-              activeTab === 'images'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            <span>Hình ảnh</span>
-            {(images.length > 0 || coverUrl) && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'images' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-              }`}>
-                {images.length + (coverUrl ? 1 : 0)}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('location')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
-              activeTab === 'location'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Vị trí GPS</span>
-            {location && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('icons')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
-              activeTab === 'icons'
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            <Smile className="w-3.5 h-3.5" />
-            <span>Biểu tượng</span>
-            {icons.length > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'icons' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-              }`}>
-                {icons.length}
-              </span>
-            )}
-          </button>
-        </div>
-
         {/* Paste Toast Notification */}
         {pasteToast && (
           <div className="bg-emerald-600 text-white text-xs font-semibold px-4 py-2 flex items-center justify-between shadow-md transition-all animate-in slide-in-from-top duration-150">
@@ -896,311 +821,307 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
         {/* Scrollable Form Body */}
         <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
           <form id="note-form" onSubmit={handleSubmit} className="space-y-4">
-            {/* TAB 1: NỘI DUNG CHÍNH */}
-            {activeTab === 'content' && (
-              <div className="space-y-4 animate-in fade-in-50 duration-150">
-                {/* 1. Tiêu đề bài viết / Ghi chú */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground">
-                      Tiêu đề bài viết / Ghi chú <span className="text-destructive">*</span>
-                    </label>
-                    {formErrors.title && (
-                      <span className="text-xs text-destructive font-medium">{formErrors.title}</span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Biên bản Cuộc họp Chiến lược, Kế hoạch tuần, Mua sắm..."
-                    value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      if (formErrors.title) setFormErrors((prev) => ({ ...prev, title: '' }));
-                    }}
-                    className={`w-full rounded-xl border ${
-                      formErrors.title ? 'border-destructive ring-1 ring-destructive' : 'border-border'
-                    } bg-background px-3.5 py-2 text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all`}
-                    autoFocus
-                  />
+            {/* 1. Tiêu đề bài viết / Ghi chú */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground">
+                  Tiêu đề bài viết / Ghi chú <span className="text-destructive">*</span>
+                </label>
+                {formErrors.title && (
+                  <span className="text-xs text-destructive font-medium">{formErrors.title}</span>
+                )}
+              </div>
+              <input
+                type="text"
+                placeholder="Ví dụ: Biên bản Cuộc họp Chiến lược, Kế hoạch tuần, Mua sắm..."
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (formErrors.title) setFormErrors((prev) => ({ ...prev, title: '' }));
+                }}
+                className={`w-full rounded-xl border ${
+                  formErrors.title ? 'border-destructive ring-1 ring-destructive' : 'border-border'
+                } bg-background px-3.5 py-2 text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all`}
+                autoFocus
+              />
+            </div>
+
+            {/* 2. Soạn thảo Nội dung (Markdown Editor) */}
+            <div className="space-y-2 rounded-xl border border-border bg-card p-3 sm:p-4">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Edit3 className="w-3.5 h-3.5 text-primary" />
+                  <span>Nội dung chi tiết</span>
+                </label>
+
+                {/* Soạn thảo / Xem trước */}
+                <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setContentTab('edit')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
+                      contentTab === 'edit'
+                        ? 'bg-background text-foreground shadow-2xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Edit3 className="w-3 h-3" /> Soạn thảo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentTab('preview')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
+                      contentTab === 'preview'
+                        ? 'bg-background text-foreground shadow-2xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Eye className="w-3 h-3" /> Xem trước
+                  </button>
                 </div>
+              </div>
 
-                {/* 2. Hàng thuộc tính nhanh (Ngày, Giờ, Trạng thái, Tác giả, Ghim) */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border">
-
-                  {/* Ngày thực hiện */}
-                  <div className="col-span-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Ngày
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const now = new Date();
-                          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                          setNoteDate(todayStr);
-                        }}
-                        className="text-[10px] text-primary hover:underline font-semibold"
-                      >
-                        Hôm nay
-                      </button>
-                    </div>
-                    <input
-                      type="date"
-                      value={noteDate}
-                      onChange={(e) => setNoteDate(e.target.value)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Giờ */}
-                  <div className="col-span-1">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                      Giờ (tg)
-                    </label>
-                    <TimePickerInput
-                      value={noteTime}
-                      onChange={(val) => setNoteTime(val)}
-                      placeholder="00:00"
-                    />
-                  </div>
-
-                  {/* Trạng thái */}
-                  <div className="col-span-1">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                      Trạng thái
-                    </label>
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as NoteStatus)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                    >
-                      <option value="published">Xuất bản</option>
-                      <option value="draft">Bản nháp</option>
-                      <option value="archived">Lưu trữ</option>
-                    </select>
-                  </div>
-
-                  {/* Tác giả */}
-                  <div className="col-span-1">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                      Tác giả
-                    </label>
-                    <input
-                      type="text"
-                      value={author}
-                      onChange={(e) => setAuthor(e.target.value)}
-                      placeholder="Người tạo..."
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Ghim ưu tiên */}
-                  <div className="col-span-1">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                      Ưu tiên
-                    </label>
+              {contentTab === 'edit' ? (
+                <div className="space-y-2">
+                  {/* Rich Toolbar */}
+                  <div className="flex flex-wrap items-center gap-0.5 p-1 rounded-lg border border-border/70 bg-muted/20 text-xs">
                     <button
                       type="button"
-                      onClick={() => setIsPinned(!isPinned)}
-                      className={`w-full h-8 rounded-lg border px-2.5 flex items-center justify-center gap-1.5 text-xs transition-colors ${
-                        isPinned
-                          ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold'
-                          : 'border-border bg-background text-muted-foreground hover:text-foreground'
-                      }`}
+                      title="Tiêu đề H1"
+                      onClick={() => insertContentMarkup('# ')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
                     >
-                      <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
-                      <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
+                      <Heading1 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Tiêu đề H2"
+                      onClick={() => insertContentMarkup('## ')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Heading2 className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="w-[1px] h-3.5 bg-border mx-0.5" />
+                    <button
+                      type="button"
+                      title="Chữ đậm"
+                      onClick={() => insertContentMarkup('**', '**')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Bold className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Chữ nghiêng"
+                      onClick={() => insertContentMarkup('*', '*')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Italic className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="w-[1px] h-3.5 bg-border mx-0.5" />
+                    <button
+                      type="button"
+                      title="Danh sách gạch đầu dòng"
+                      onClick={() => insertContentMarkup('- ')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Checklist công việc"
+                      onClick={() => insertContentMarkup('- [ ] ')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Khối mã nguồn"
+                      onClick={() => insertContentMarkup('```typescript\n', '\n```')}
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Code className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Bảng dữ liệu"
+                      onClick={() =>
+                        insertContentMarkup(
+                          '| Cột 1 | Cột 2 | Cột 3 |\n| --- | --- | --- |\n| Dữ liệu 1 | Dữ liệu 2 | Dữ liệu 3 |\n',
+                          '',
+                          ''
+                        )
+                      }
+                      className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Table className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="w-[1px] h-3.5 bg-border mx-0.5" />
+                    <button
+                      type="button"
+                      title="Hộp lưu ý (Note callout)"
+                      onClick={() => insertContentMarkup('> [!NOTE]\n> ', '', 'Nội dung lưu ý...')}
+                      className="p-1 rounded hover:bg-muted text-primary transition-colors text-[11px] flex items-center gap-0.5"
+                    >
+                      <Info className="w-3 h-3" /> Note
+                    </button>
+                    <button
+                      type="button"
+                      title="Hộp mẹo hay (Tip callout)"
+                      onClick={() => insertContentMarkup('> [!TIP]\n> ', '', 'Mẹo hay...')}
+                      className="p-1 rounded hover:bg-muted text-emerald-600 dark:text-emerald-400 transition-colors text-[11px] flex items-center gap-0.5"
+                    >
+                      <Lightbulb className="w-3 h-3" /> Mẹo
+                    </button>
+                    <button
+                      type="button"
+                      title="Hộp cảnh báo (Warning callout)"
+                      onClick={() => insertContentMarkup('> [!WARNING]\n> ', '', 'Cảnh báo...')}
+                      className="p-1 rounded hover:bg-muted text-amber-600 dark:text-amber-400 transition-colors text-[11px] flex items-center gap-0.5"
+                    >
+                      <AlertTriangle className="w-3 h-3" /> Cảnh báo
+                    </button>
+                    <button
+                      type="button"
+                      title="Chèn liên kết dạng >link : (bấm mở trực tiếp)"
+                      onClick={() => insertContentMarkup('>link : https://', '', 'duong-dan-trang-web.com')}
+                      className="p-1 rounded hover:bg-muted text-sky-600 dark:text-sky-400 transition-colors text-[11px] flex items-center gap-0.5 font-semibold"
+                    >
+                      <Globe className="w-3 h-3" /> &gt;link :
                     </button>
                   </div>
+
+                  {/* Textarea */}
+                  <textarea
+                    ref={contentTextareaRef}
+                    rows={7}
+                    placeholder="Soạn thảo nội dung bài viết, biên bản hoặc ghi chú..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background p-3 text-xs sm:text-sm font-mono leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-y"
+                  />
                 </div>
-
-                {/* 3. Soạn thảo Nội dung (Markdown Editor) */}
-                <div className="space-y-2 rounded-xl border border-border bg-card p-3 sm:p-4">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      <Edit3 className="w-3.5 h-3.5 text-primary" />
-                      <span>Nội dung chi tiết</span>
-                    </label>
-
-                    {/* Soạn thảo / Xem trước */}
-                    <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setContentTab('edit')}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
-                          contentTab === 'edit'
-                            ? 'bg-background text-foreground shadow-2xs'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        <Edit3 className="w-3 h-3" /> Soạn thảo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setContentTab('preview')}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors flex items-center gap-1 ${
-                          contentTab === 'preview'
-                            ? 'bg-background text-foreground shadow-2xs'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        <Eye className="w-3 h-3" /> Xem trước
-                      </button>
-                    </div>
-                  </div>
-
-                  {contentTab === 'edit' ? (
-                    <div className="space-y-2">
-                      {/* Rich Toolbar */}
-                      <div className="flex flex-wrap items-center gap-0.5 p-1 rounded-lg border border-border/70 bg-muted/20 text-xs">
-                        <button
-                          type="button"
-                          title="Tiêu đề H1"
-                          onClick={() => insertContentMarkup('# ')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Heading1 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Tiêu đề H2"
-                          onClick={() => insertContentMarkup('## ')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Heading2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="w-[1px] h-3.5 bg-border mx-0.5" />
-                        <button
-                          type="button"
-                          title="Chữ đậm"
-                          onClick={() => insertContentMarkup('**', '**')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Bold className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Chữ nghiêng"
-                          onClick={() => insertContentMarkup('*', '*')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Italic className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="w-[1px] h-3.5 bg-border mx-0.5" />
-                        <button
-                          type="button"
-                          title="Danh sách gạch đầu dòng"
-                          onClick={() => insertContentMarkup('- ')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <List className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Checklist công việc"
-                          onClick={() => insertContentMarkup('- [ ] ')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <CheckSquare className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Khối mã nguồn"
-                          onClick={() => insertContentMarkup('```typescript\n', '\n```')}
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Code className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Bảng dữ liệu"
-                          onClick={() =>
-                            insertContentMarkup(
-                              '| Cột 1 | Cột 2 | Cột 3 |\n| --- | --- | --- |\n| Dữ liệu 1 | Dữ liệu 2 | Dữ liệu 3 |\n',
-                              '',
-                              ''
-                            )
-                          }
-                          className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
-                        >
-                          <Table className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="w-[1px] h-3.5 bg-border mx-0.5" />
-                        <button
-                          type="button"
-                          title="Hộp lưu ý (Note callout)"
-                          onClick={() => insertContentMarkup('> [!NOTE]\n> ', '', 'Nội dung lưu ý...')}
-                          className="p-1 rounded hover:bg-muted text-primary transition-colors text-[11px] flex items-center gap-0.5"
-                        >
-                          <Info className="w-3 h-3" /> Note
-                        </button>
-                        <button
-                          type="button"
-                          title="Hộp mẹo hay (Tip callout)"
-                          onClick={() => insertContentMarkup('> [!TIP]\n> ', '', 'Mẹo hay...')}
-                          className="p-1 rounded hover:bg-muted text-emerald-600 dark:text-emerald-400 transition-colors text-[11px] flex items-center gap-0.5"
-                        >
-                          <Lightbulb className="w-3 h-3" /> Mẹo
-                        </button>
-                        <button
-                          type="button"
-                          title="Hộp cảnh báo (Warning callout)"
-                          onClick={() => insertContentMarkup('> [!WARNING]\n> ', '', 'Cảnh báo...')}
-                          className="p-1 rounded hover:bg-muted text-amber-600 dark:text-amber-400 transition-colors text-[11px] flex items-center gap-0.5"
-                        >
-                          <AlertTriangle className="w-3 h-3" /> Cảnh báo
-                        </button>
-                        <button
-                          type="button"
-                          title="Chèn liên kết dạng >link : (bấm mở trực tiếp)"
-                          onClick={() => insertContentMarkup('>link : https://', '', 'duong-dan-trang-web.com')}
-                          className="p-1 rounded hover:bg-muted text-sky-600 dark:text-sky-400 transition-colors text-[11px] flex items-center gap-0.5 font-semibold"
-                        >
-                          <Globe className="w-3 h-3" /> &gt;link :
-                        </button>
-                      </div>
-
-                      {/* Textarea */}
-                      <textarea
-                        ref={contentTextareaRef}
-                        rows={7}
-                        placeholder="Soạn thảo nội dung bài viết, biên bản hoặc ghi chú..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background p-3 text-xs sm:text-sm font-mono leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-y"
-                      />
-                    </div>
-                  ) : (
-                    /* Live Preview */
-                    <div className="rounded-xl border border-border/80 bg-background/50 p-4 min-h-[160px]">
-                      <MarkdownRenderer content={content} />
-                    </div>
-                  )}
-
-                  {/* Đường dẫn liên kết (Link / URL) */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-border/60">
-                    <Globe className="w-4 h-4 text-primary shrink-0" />
-                    <input
-                      type="url"
-                      placeholder="Đường dẫn liên kết web, video, tài liệu (URL)..."
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
-                      className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-8"
-                    />
-                    {link.trim() && (
-                      <a
-                        href={link.startsWith('http') ? link : `https://${link}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="h-8 px-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold inline-flex items-center gap-1 border border-primary/30 shrink-0 transition-colors"
-                        title="Mở liên kết"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
+              ) : (
+                /* Live Preview */
+                <div className="rounded-xl border border-border/80 bg-background/50 p-4 min-h-[160px]">
+                  <MarkdownRenderer content={content} />
                 </div>
+              )}
+
+              {/* Đường dẫn liên kết (Link / URL) */}
+              <div className="flex items-center gap-2 pt-2 border-t border-border/60">
+                <Globe className="w-4 h-4 text-primary shrink-0" />
+                <input
+                  type="url"
+                  placeholder="Đường dẫn liên kết web, video, tài liệu (URL)..."
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-8"
+                />
+                {link.trim() && (
+                  <a
+                    href={link.startsWith('http') ? link : `https://${link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-8 px-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold inline-flex items-center gap-1 border border-primary/30 shrink-0 transition-colors"
+                    title="Mở liên kết"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Hàng thuộc tính nhanh (Ngày, Giờ, Trạng thái, Tác giả, Ghim) - Đưa xuống dưới Nội dung chi tiết */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border">
+              {/* Ngày thực hiện */}
+              <div className="col-span-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground">
+                    Ngày
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                      setNoteDate(todayStr);
+                    }}
+                    className="text-[10px] text-primary hover:underline font-semibold"
+                  >
+                    Hôm nay
+                  </button>
+                </div>
+                <input
+                  type="date"
+                  value={noteDate}
+                  onChange={(e) => setNoteDate(e.target.value)}
+                  className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              {/* Giờ */}
+              <div className="col-span-1">
+                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                  Giờ (tg)
+                </label>
+                <TimePickerInput
+                  value={noteTime}
+                  onChange={(val) => setNoteTime(val)}
+                  placeholder="00:00"
+                />
+              </div>
+
+              {/* Trạng thái */}
+              <div className="col-span-1">
+                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                  Trạng thái
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as NoteStatus)}
+                  className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                >
+                  <option value="published">Xuất bản</option>
+                  <option value="draft">Bản nháp</option>
+                  <option value="archived">Lưu trữ</option>
+                </select>
+              </div>
+
+              {/* Tác giả */}
+              <div className="col-span-1">
+                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                  Tác giả
+                </label>
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Người tạo..."
+                  className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              {/* Ghim ưu tiên */}
+              <div className="col-span-1">
+                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                  Ưu tiên
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsPinned(!isPinned)}
+                  className={`w-full h-8 rounded-lg border px-2.5 flex items-center justify-center gap-1.5 text-xs transition-colors ${
+                    isPinned
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold'
+                      : 'border-border bg-background text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
+                  <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
+                </button>
+              </div>
+            </div>
 
                 {/* 4. Đối tượng liên quan & Thẻ phân loại (2-col grid gọn gàng) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1434,36 +1355,33 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('images')}
-                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      onClick={() => document.getElementById('note-section-images')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <ImageIcon className="w-3.5 h-3.5 text-primary" />
                       <span>Hình ảnh {images.length > 0 ? `(${images.length})` : ''}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('location')}
-                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      onClick={() => document.getElementById('note-section-location')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <MapPin className="w-3.5 h-3.5 text-rose-500" />
                       <span>Vị trí GPS {location ? '✓' : ''}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('icons')}
-                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      onClick={() => document.getElementById('note-section-icons')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Smile className="w-3.5 h-3.5 text-amber-500" />
                       <span>Biểu tượng {icons.length > 0 ? `(${icons.length})` : ''}</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* TAB 2: HÌNH ẢNH & BÌA */}
-            {activeTab === 'images' && (
-              <div className="space-y-4 animate-in fade-in-50 duration-150">
+            {/* PHẦN 2: HÌNH ẢNH & BÌA */}
+            <div id="note-section-images" className="space-y-4 pt-1">
                 {/* Ảnh bìa bài viết (Cover Banner) */}
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1613,12 +1531,10 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+            </div>
 
-            {/* TAB 3: VỊ TRÍ & GPS */}
-            {activeTab === 'location' && (
-              <div className="space-y-4 animate-in fade-in-50 duration-150">
+            {/* PHẦN 3: VỊ TRÍ & GPS */}
+            <div id="note-section-location" className="space-y-4 pt-1">
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
@@ -1729,12 +1645,10 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
 
-            {/* TAB 4: BIỂU TƯỢNG & CẢM XÚC */}
-            {activeTab === 'icons' && (
-              <div className="space-y-4 animate-in fade-in-50 duration-150">
+            {/* PHẦN 4: BIỂU TƯỢNG & CẢM XÚC */}
+            <div id="note-section-icons" className="space-y-4 pt-1">
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
@@ -1852,8 +1766,7 @@ export const NoteFormDrawer: React.FC<NoteFormDrawerProps> = ({
                     })}
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
           </form>
         </div>
 
